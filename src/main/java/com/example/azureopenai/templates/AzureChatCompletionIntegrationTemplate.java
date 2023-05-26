@@ -48,12 +48,19 @@ import okhttp3.Response;
 @IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
 public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTemplate {
 
+  private static String[] getErrorDetails(String responseBdoy) {
+    JSONObject responseJSON = new JSONObject(responseBdoy);
+    String errorTitle = (String)((JSONObject)responseJSON.get("error")).get("code");
+    String message = (String)((JSONObject)responseJSON.get("error")).get("message");
+    return new String[] {errorTitle, message};
+  }
   private static String getFullEndpoint(String resourceName, String deploymentID, String APIVersion) {
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/chat/completions?api-version=%s", resourceName, deploymentID, APIVersion);
   }
   //      retrieve content from reply
   private static ArrayList<String> getResponseContent(String responseBody) {
-    JSONObject jsonResponse = new JSONObject(responseBody);
+    String responseStr = responseBody;
+    JSONObject jsonResponse = new JSONObject(responseStr);
     JSONArray choices = jsonResponse.getJSONArray("choices");
     ArrayList<String> contentArr = new ArrayList<>();
     String content = "";
@@ -96,6 +103,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     MediaType mediaType = MediaType.parse("application/json");
 
     RequestBody body = RequestBody.create(mediaType, requestBody);
+    String responseBody;
 
     Request request = new Request.Builder()
         .url(endpoint)
@@ -103,11 +111,17 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .addHeader("api-key", apiKey)
         .addHeader("Content-Type","application/json")
         .build();
-//    new
-    Response response;
-    response = client.newCall(request).execute();
-    String responseBody = response.body().string();
 
+    Response response = null;
+//    try {
+    response = client.newCall(request).execute();
+    responseBody = response.body().string();
+//    } catch (Exception e) {
+//      return response.body().string();
+//    }
+
+    
+//tested here for error details - call from here?
     response.close();
 
     return responseBody;
@@ -411,27 +425,31 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .builder();
 
 //    2. make the remote request
-    String response = "";
+    String response ="";
     ArrayList<String> result = new ArrayList<>();
-
+//error details works from here
     final long start = System.currentTimeMillis();
     IntegrationError error = null;
     final IntegrationDesignerDiagnostic diagnostic;
 
     try {
+//      type Response
       response = chatCompletionCall(apiKey, endpoint, inputMap);
-//      resultMap.put("Response", response);
       resultMap.put("Chat Completion", getResponseContent(response));
-      resultMap.put("Successful Response Code", 200);
-      diagnosticResponse.put("Full Response", response);
 
     } catch (Exception e) {
+
+      String[] errorDetails = getErrorDetails(response);
       error = IntegrationError.builder()
-          .title("Integration Error")
-          .message("While calling the chat completion endpoint, an error occurred.")
-          .build();
+              .title("Error Title: " + errorDetails[0])
+              .message("While calling the Chat Completion endpoint, an error occurred. Please check your Deployment ID and API Version.\n")
+              .detail(errorDetails[1])
+              .build();
 
     } finally {
+
+      diagnosticResponse.put("Full Response", response);
+
       //    3. translate resultMap from integration into appian values
 
       final long end = System.currentTimeMillis();
@@ -450,7 +468,11 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
           .withDiagnostic(diagnostic)
           .build();
     }
+    
 
+//    diagnosticResponse.put("Full Response", response);
+    resultMap.put("Successful Response Code", 200);
+    
     return IntegrationResponse
         .forSuccess(resultMap)
         .withDiagnostic(diagnostic)
