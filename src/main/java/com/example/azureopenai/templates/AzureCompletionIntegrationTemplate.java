@@ -55,6 +55,8 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
   public static final String SUFFIX = "suffix";
   public static final String ECHO = "echo";
   public static final String BEST_OF = "best_of";
+  public static final String GPT35TURBO = "gpt_35_turbo";
+
 
 private static String getChoices(String responseBody) {
   JSONObject jsonResponse = new JSONObject(responseBody);
@@ -68,6 +70,8 @@ private static String getChoices(String responseBody) {
     int max_tokens = (Integer)inputMap.get(MAX_TOKENS);
     Double temperature = (Double)inputMap.get(TEMPERATURE);
     Double top_p = (Double)inputMap.get(TOP_P);
+    Boolean gpt35turbo = (Boolean)inputMap.get(GPT35TURBO);
+
 //    might need to manipulate array to get Str
     String stop;
     if (inputMap.get(STOP) != null) {stop = (String)(inputMap.get(STOP).toString());}
@@ -85,13 +89,23 @@ private static String getChoices(String responseBody) {
 
 
     OkHttpClient client = new OkHttpClient();
+    String requestBody;
 
-    String requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
+    if (!gpt35turbo) {
+      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
         "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
         "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
         "\"temperature\": %f}",
         prompt, stop, max_tokens, top_p, logit_bias,
         user, n,presence_pen, freq_pen, best_of, logprobs, echo, temperature );
+    } else {
+      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
+              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
+              "\"frequency_penalty\": %f, " +
+              "\"temperature\": %f}",
+          prompt, stop, max_tokens, top_p, logit_bias,
+          user, n,presence_pen, freq_pen, temperature );
+    }
 
     MediaType mediaType = MediaType.parse("application/json");
 
@@ -158,6 +172,11 @@ private static String getChoices(String responseBody) {
               //            to change later when it is more than chat completion?
               .description("The prompt(s) to generate completions for, encoded as a list of strings. Default is the beginning of a new document.")
               .build(),
+          booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
+              .displayMode(BooleanDisplayMode.RADIO_BUTTON)
+              .isExpressionable(true)
+              .description("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
+              .build(),
           booleanProperty(DEV_SETTINGS).label("Developer Settings")
               .displayMode(BooleanDisplayMode.CHECKBOX)
               .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
@@ -188,6 +207,11 @@ private static String getChoices(String responseBody) {
             .isExpressionable(true)
             //            to change later when it is more than chat completion?
             .description("The prompt(s) to generate completions for, encoded as a list of strings. Default is the beginning of a new document.")
+            .build(),
+        booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
+            .displayMode(BooleanDisplayMode.RADIO_BUTTON)
+            .description("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
+            .isExpressionable(true)
             .build(),
         booleanProperty(DEV_SETTINGS).label("Developer Settings")
             .displayMode(BooleanDisplayMode.CHECKBOX)
@@ -290,11 +314,17 @@ private static String getChoices(String responseBody) {
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
     String APIVersion = integrationConfiguration.getValue(API_VERSION);
     String endpoint = getFullEndpoint(resourceName, deploymentID, APIVersion);
-    requestDiagnostic.put("API Key", apiKey);
     requestDiagnostic.put("Endpoint", endpoint);
+
 
     //    retrieve data from integration
     HashMap<String, Object> inputMap = new HashMap<>();
+
+    //    gpt-35-turbo
+    Boolean gpt35Turbo = integrationConfiguration.getValue(GPT35TURBO);
+    if (gpt35Turbo == null) gpt35Turbo = true;
+    inputMap.put(GPT35TURBO, gpt35Turbo);
+
 //    prompt
     ArrayList<Object> prompt = integrationConfiguration.getValue(PROMPT);
     ArrayList<String> promptArr = new ArrayList<>();
@@ -466,7 +496,7 @@ private static String getChoices(String responseBody) {
 
     Map<String, Object> diagnosticResponse = new HashMap<>();
 //    String embedding = getEmbeddingArray(responseBody).toString();
-    diagnosticResponse.put("Choices", getChoices(responseHelper));
+//    diagnosticResponse.put("Choices", getChoices(responseHelper));
 
     IntegrationDesignerDiagnostic diagnostic = diagnosticBuilder
         .addExecutionTimeDiagnostic(executionTime)

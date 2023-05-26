@@ -144,7 +144,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
 //    create dynamic fields
     Boolean devSettingsState = integrationConfiguration.getValue(DEV_SETTINGS);
-    if(!devSettingsState) {
+    if(devSettingsState == null || !devSettingsState) {
       return integrationConfiguration.setProperties(
       textProperty(DEPLOYMENT_ID)
           .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
@@ -303,9 +303,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     Map<String,Object> requestDiagnostic = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(YOUR_RESOURCE_NAME);
-//    String deploymentID = connectedSystemConfiguration.getValue(new PropertyPath(ENDPOINT_INFO,DEPLOYMENT_ID));
-//    String APIVersion = connectedSystemConfiguration.getValue(new PropertyPath(ENDPOINT_INFO,API_VERSION));
-//    String integrationChoice = connectedSystemConfiguration.getValue(new PropertyPath(ENDPOINT_INFO,INTEGRATION_CHOICE));
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
     String APIVersion = integrationConfiguration.getValue(API_VERSION);
     String endpoint = getFullEndpoint(resourceName, deploymentID, APIVersion);
@@ -313,7 +310,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
     Map<String, Object> inputMap = new HashMap<>();
 
-    requestDiagnostic.put("API Key", apiKey);
     requestDiagnostic.put("Endpoint", endpoint);
 //    retrieve data from integration
 //      messages
@@ -332,8 +328,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         role = (String)((PropertyState)((Map<String, Object>)((PropertyState)messages.get(i)).getValue()).get("role")).getValue();
         content = (String)((PropertyState)((Map<String, Object>)((PropertyState)messages.get(i)).getValue()).get("content")).getValue();
 
-//      [{"role": "system", "content": "You are a helpful assistant."},{"role": "user", "content": "What is azure"}]
-
         itemString = String.format("{\"role\": \"%s\", \"content\": \"%s\"}", role, content);
         messageString += itemString;
 
@@ -348,6 +342,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
       System.out.println(e.getMessage());
     }
 
+    requestDiagnostic.put("API Key", apiKey == null ? null: "********");
     requestDiagnostic.put("Message Input", messageString);
     inputMap.put("messages", messageString);
 
@@ -417,6 +412,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
 //    2. make the remote request
     String response = "";
+    ArrayList<String> result = new ArrayList<>();
 
     final long start = System.currentTimeMillis();
     IntegrationError error = null;
@@ -424,21 +420,23 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
     try {
       response = chatCompletionCall(apiKey, endpoint, inputMap);
-      resultMap.put("Response", response);
-      diagnosticResponse.put("Content", getResponseContent(response));
+//      resultMap.put("Response", response);
+      resultMap.put("Chat Completion", getResponseContent(response));
+      resultMap.put("Successful Response Code", 200);
+      diagnosticResponse.put("Full Response", response);
 
     } catch (Exception e) {
-      error = IntegrationError.builder().build();
+      error = IntegrationError.builder()
+          .title("Integration Error")
+          .message("While calling the chat completion endpoint, an error occurred.")
+          .build();
 
     } finally {
       //    3. translate resultMap from integration into appian values
 
       final long end = System.currentTimeMillis();
       final long executionTime = end - start;
-//      diagnostic = IntegrationDesignerDiagnostic.builder()
-//          .addExecutionTimeDiagnostic(executionTime)
-//          .addRequestDiagnostic(requestDiagnostic)
-//          .build();
+
        diagnostic = diagnosticBuilder
           .addExecutionTimeDiagnostic(executionTime)
           .addRequestDiagnostic(requestDiagnostic)

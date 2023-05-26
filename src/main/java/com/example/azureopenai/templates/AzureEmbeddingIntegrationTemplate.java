@@ -99,7 +99,6 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
     String APIVersion = integrationConfiguration.getValue(API_VERSION);
     String endpoint = getFullEndpoint(resourceName, deploymentID, APIVersion);
-    requestDiagnostic.put("API Key", apiKey);
     requestDiagnostic.put("Endpoint", endpoint);
 
 //    retrieve from integration
@@ -147,13 +146,14 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
 //    create diagnostics (modeled after Google Drive CS Example)
     Map<String, Object> resultMap = new HashMap<>();
     resultMap.put("Response", responseBody);
-//    resultMap.put("Content", )
+
     IntegrationDesignerDiagnostic.IntegrationDesignerDiagnosticBuilder diagnosticBuilder = IntegrationDesignerDiagnostic
         .builder();
 
     Map<String, Object> diagnosticResponse = new HashMap<>();
-    String embedding = getEmbeddingArray(responseBody).toString();
-    diagnosticResponse.put("Embedding", embedding);
+//    String embedding = getEmbeddingArray(responseBody).toString();
+//    diagnosticResponse.put("Embedding", embedding);
+    diagnosticResponse.put("Response", responseBody);
     IntegrationDesignerDiagnostic diagnostic = diagnosticBuilder
         .addExecutionTimeDiagnostic(executionTime)
         .addRequestDiagnostic(requestDiagnostic)
