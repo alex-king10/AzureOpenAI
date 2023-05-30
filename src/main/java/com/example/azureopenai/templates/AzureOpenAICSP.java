@@ -14,7 +14,6 @@ import com.appian.connectedsystems.templateframework.sdk.TemplateId;
 import com.appian.connectedsystems.templateframework.sdk.configuration.LocalTypeDescriptor;
 import com.appian.connectedsystems.templateframework.sdk.connectiontesting.TestConnectionResult;
 
-import okhttp3.Response;
 
 //import okhttp3.HttpUrl;
 //import okhttp3.OkHttpClient;
