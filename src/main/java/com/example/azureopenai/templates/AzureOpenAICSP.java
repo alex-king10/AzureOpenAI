@@ -7,21 +7,15 @@ import static com.example.azureopenai.templates.AzureChatCompletionIntegrationTe
 import java.util.HashMap;
 import java.util.Map;
 
-import com.appian.connectedsystems.simplified.sdk.SimpleConnectedSystemTemplate;
 import com.appian.connectedsystems.simplified.sdk.configuration.SimpleConfiguration;
+import com.appian.connectedsystems.simplified.sdk.connectiontesting.SimpleTestableConnectedSystemTemplate;
 import com.appian.connectedsystems.templateframework.sdk.ExecutionContext;
 import com.appian.connectedsystems.templateframework.sdk.TemplateId;
-import com.appian.connectedsystems.templateframework.sdk.configuration.LocalTypeDescriptor;
 import com.appian.connectedsystems.templateframework.sdk.connectiontesting.TestConnectionResult;
 
 
-//import okhttp3.HttpUrl;
-//import okhttp3.OkHttpClient;
-//import okhttp3.Request;
-//import okhttp3.Response;
-
 @TemplateId(name="AzureOpenAICSP")
-public class AzureOpenAICSP extends SimpleConnectedSystemTemplate {
+public class AzureOpenAICSP extends SimpleTestableConnectedSystemTemplate {
 
   public static final String API_KEY = "APIKey";
   public static final String YOUR_RESOURCE_NAME = "YourResourceName";
@@ -34,20 +28,7 @@ public class AzureOpenAICSP extends SimpleConnectedSystemTemplate {
   protected SimpleConfiguration getConfiguration(
       SimpleConfiguration simpleConfiguration, ExecutionContext executionContext) {
 
-    LocalTypeDescriptor endpointInfo = localType(ENDPOINT_INFO).properties(
-        textProperty(YOUR_RESOURCE_NAME).label("Resource Name").isRequired(true).build()
-//        textProperty(DEPLOYMENT_ID).label("Deployment Id").isRequired(true).build(),
-//        textProperty(API_VERSION).label("API Version").isRequired(true).build(),
-//        textProperty(INTEGRATION_CHOICE).label("Integration").choices(
-//            Choice.builder().name("Completion").value("completions").build(),
-//            Choice.builder().name("Embedding").value("embeddings").build(),
-//            Choice.builder().name("Chat Completion").value("chat/completions").build()
-//        ).build()
-    ).build();
-
     return simpleConfiguration.setProperties(
-        // Make sure you make public constants for all keys so that associated
-        // integrations can easily access this field
         textProperty(YOUR_RESOURCE_NAME)
             .label("Your Resource Name")
             .description("The name of your Azure OpenAI Resource.")
@@ -66,7 +47,6 @@ public class AzureOpenAICSP extends SimpleConnectedSystemTemplate {
     );
   }
 
-//  @Override
   protected TestConnectionResult testConnection(SimpleConfiguration simpleConfiguration, ExecutionContext executionContext) {
     String endpoint = "https://openaitestappian2.openai.azure.com/openai/deployments/GPT4_32k/chat/completions?api-version=2023-03-15-preview";
     String apiKey = API_KEY.toString();

@@ -154,13 +154,13 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     Boolean devSettingsState = integrationConfiguration.getValue(DEV_SETTINGS);
     if(devSettingsState == null || !devSettingsState) {
       return integrationConfiguration.setProperties(
-      textProperty(DEPLOYMENT_ID)
+      textProperty(DEPLOYMENT_ID).label("Deployment ID")
           .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
           .placeholder("ex: GPT4_32K")
           .isRequired(true)
           .isExpressionable(true)
           .build(),
-          textProperty(API_VERSION)
+          textProperty(API_VERSION).label("API Version")
               .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
               .isRequired(true)
               .isExpressionable(true)
@@ -180,53 +180,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
       );
     }
 
-//    LocalTypeDescriptor chatCompConfig = localType("chatCompConfig").properties(
-//        listTypeProperty(MESSAGE).label("Message Input")
-//            .itemType(TypeReference.from(messageInputType))
-//            .isExpressionable(true)
-//            .isRequired(true)
-//            .description("This will be your initial message to Azure's OpenAI Chat Bot")
-//            .build(),
-//        textProperty(TEMPERATURE).label("Temperature")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. Default of 1.")
-//            .build(),
-//        integerProperty(N).label("n")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("How many chat completion choices to generate for each input message. Default of 1.")
-//            .build(),
-//        integerProperty(MAX_TOKENS).label("Max Tokens")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("The maximum number of tokens allowed for the generated answer. By default, the number of tokens the model can return will be 4096 - prompt tokens.")
-//            .build(),
-//        textProperty(PRESENCE_PENALTY).label("Presence Penalty")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
-//            .build(),
-//        textProperty(FREQ_PENALTY).label("Frequency Penalty")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.")
-//            .build(),
-//        textProperty(LOGIT_BIAS).label("Logit Bias")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("Modify the likelihood of specified tokens appearing in the completion. Accepts a json object that maps tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100.")
-//            .build(),
-//        textProperty(USER).label("User")
-//            .isRequired(false)
-//            .isExpressionable(true)
-//            .description("A unique identifier representing your end-user, which can help Azure OpenAI to monitor and detect abuse.")
-//            .build()
-//        ).build();
-//
-//    return integrationConfiguration.setProperties(
-//        localTypeProperty(chatCompConfig).label("Chat Completion Choices").isExpressionable(true).build()
-//    );
 
     return integrationConfiguration.setProperties(
         // Make sure you make constants for all keys so that you can easily

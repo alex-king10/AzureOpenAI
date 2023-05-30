@@ -19,6 +19,7 @@ import com.appian.connectedsystems.templateframework.sdk.ExecutionContext;
 import com.appian.connectedsystems.templateframework.sdk.IntegrationError;
 import com.appian.connectedsystems.templateframework.sdk.IntegrationResponse;
 import com.appian.connectedsystems.templateframework.sdk.TemplateId;
+import com.appian.connectedsystems.templateframework.sdk.configuration.DisplayHint;
 import com.appian.connectedsystems.templateframework.sdk.configuration.PropertyPath;
 import com.appian.connectedsystems.templateframework.sdk.diagnostics.IntegrationDesignerDiagnostic;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateRequestPolicy;
@@ -98,9 +99,10 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
     return integrationConfiguration.setProperties(
         textProperty(DEPLOYMENT_ID).label("Deployment ID")
             .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
-            .placeholder("ex: GPT4_32K")
+            .placeholder("ex: ADA_002_DeploymentID")
             .isRequired(true)
             .isExpressionable(true)
+            .instructionText("Enter the ID of the model you have deployed for use with the Embeddings endpoint.")
             .build(),
         textProperty(API_VERSION).label("API Version")
             .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
@@ -114,6 +116,7 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
             .isExpressionable(true)
 //            to change later when it is more than chat completion?
             .description("Input text to get embeddings for, encoded as a string.")
+            .displayHint(DisplayHint.NORMAL)
             .build()
     );
   }

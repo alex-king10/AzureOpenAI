@@ -16,6 +16,7 @@ import static std.SharedMethods.getErrorDetails;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -174,12 +175,14 @@ private static String getChoices(String responseBody) {
       return integrationConfiguration.setProperties(
           textProperty(DEPLOYMENT_ID).label("Deployment ID")
               .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
-              .placeholder("ex: GPT4_32K")
+              .placeholder("ex: GPT35Turbo_DeploymentID")
               .isRequired(true)
               .isExpressionable(true)
+              .instructionText("Name of your deployment ID for this integration's appropriate model.")
               .build(),
           textProperty(API_VERSION).label("API Version")
-              .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
+              .description("This follows the YYYY-MM-DD format.")
+              .instructionText("API version to use for this operation.")
               .isRequired(true)
               .isExpressionable(true)
               .placeholder("ex: 2023-05-15")
@@ -189,14 +192,16 @@ private static String getChoices(String responseBody) {
               .isRequired(false)
               //            false if properties need to be hard coded and baked by the time user presses send
               .isExpressionable(true)
+              .description("Default is the beginning of a new document.")
               //            to change later when it is more than chat completion?
-              .description("The prompt(s) to generate completions for, encoded as a list of strings. Default is the beginning of a new document.")
+              .instructionText("Prompt(s) to generate completions for, encoded as a list of strings. In the following format: \n" +
+                  "{\n\t\"Once upon a time...\",\n\t\"In a land far away\"\n }")
               .build(),
-          booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
-              .displayMode(BooleanDisplayMode.RADIO_BUTTON)
-              .isExpressionable(true)
-              .description("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
-              .build(),
+//          booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
+//              .displayMode(BooleanDisplayMode.RADIO_BUTTON)
+//              .isExpressionable(true)
+//              .instructionText("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
+//              .build(),
           booleanProperty(DEV_SETTINGS).label("Developer Settings")
               .displayMode(BooleanDisplayMode.CHECKBOX)
               .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
@@ -206,16 +211,16 @@ private static String getChoices(String responseBody) {
     }
 
     return integrationConfiguration.setProperties(
-        // Make sure you make constants for all keys so that you can easily
-        // access the values during execution
         textProperty(DEPLOYMENT_ID).label("Deployment ID")
             .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
-            .placeholder("ex: GPT4_32K")
+            .placeholder("ex: GPT35Turbo_DeploymentID")
             .isRequired(true)
             .isExpressionable(true)
+            .instructionText("Name of your deployment ID for this integration's appropriate model.")
             .build(),
         textProperty(API_VERSION).label("API Version")
-            .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
+            .description("This follows the YYYY-MM-DD format.")
+            .instructionText("API version to use for this operation.")
             .isRequired(true)
             .isExpressionable(true)
             .placeholder("ex: 2023-05-15")
@@ -225,14 +230,16 @@ private static String getChoices(String responseBody) {
             .isRequired(false)
             //            false if properties need to be hard coded and baked by the time user presses send
             .isExpressionable(true)
+            .description("Default is the beginning of a new document.")
             //            to change later when it is more than chat completion?
-            .description("The prompt(s) to generate completions for, encoded as a list of strings. Default is the beginning of a new document.")
+            .instructionText("Prompt(s) to generate completions for, encoded as a list of strings. In the following format: \n" +
+                "{\n\t\"Once upon a time...\",\n\t\"In a land far away\"\n }")
             .build(),
-        booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
-            .displayMode(BooleanDisplayMode.RADIO_BUTTON)
-            .description("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
-            .isExpressionable(true)
-            .build(),
+//        booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
+//            .displayMode(BooleanDisplayMode.RADIO_BUTTON)
+//            .description("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
+//            .isExpressionable(true)
+//            .build(),
         booleanProperty(DEV_SETTINGS).label("Developer Settings")
             .displayMode(BooleanDisplayMode.CHECKBOX)
             .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
@@ -241,55 +248,62 @@ private static String getChoices(String responseBody) {
         integerProperty(MAX_TOKENS).label("Max Tokens")
             .isRequired(false)
             .isExpressionable(true)
+            .instructionText("Maximum number of tokens to generate in the completion.")
             .placeholder("16")
-            .description("The maximum number of tokens to generate in the completion. The token count of your prompt plus max_tokens can't exceed the model's context length. Default of 16.")
+            .description("The token count of your prompt plus max_tokens can't exceed the model's context length. Default of 16.")
             .build(),
         textProperty(TEMPERATURE).label("Temperature")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("1.0")
-            .description("What sampling temperature to use, between 0 and 2. Higher values means the model will take more risks. Default of 1.")
+            .instructionText("Sampling temperature to use, between 0 and 2")
+            .description("Higher values means the model will take more risks. Default of 1.")
             .build(),
         textProperty(TOP_P).label("Top P")
             .isRequired(false)
             .isExpressionable(true)
             .description("An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. We generally recommend altering this or temperature but not both.")
             .placeholder("1.0")
+            .instructionText("Top p value between 0 and 1, nucleus sampling")
             .build(),
         textProperty(LOGIT_BIAS).label("Logit Bias")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("{}")
             .description("Modify the likelihood of specified tokens appearing in the completion. Accepts a json object that maps tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100.")
+            .instructionText("Enter Logit Bias as JSON of token to bias value from -100 to 100.")
             .build(),
         textProperty(USER).label("User")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("firstName.lastName")
             .description("A unique identifier representing your end-user, which can help Azure OpenAI to monitor and detect abuse.")
+            .instructionText("Enter a username as a unique identifier")
             .build(),
         integerProperty(N).label("n")
             .isRequired(false)
             .isExpressionable(true)
-            .description("How many chat completion choices to generate for each input message. Default of 1.")
+            .description("Default of 1.")
+            .instructionText("Number of chat completion choices to generate for each input message.")
             .placeholder("1")
             .build(),
         integerProperty(LOGPROBS).label("Log Probs")
             .isRequired(false)
             .isExpressionable(true)
             .description("Include the log probabilities on the logprobs most likely tokens, as well the chosen tokens. For example, if logprobs is 10, the API will return a list of the 10 most likely tokens. the API will always return the logprob of the sampled token, so there may be up to logprobs+1 elements in the response. This parameter cannot be used with gpt-35-turbo.")
+            .instructionText("Enter the number of most likely tokens to be returned. This parameter cannot be used with gpt-35-turbo.")
             .placeholder("null")
             .build(),
         textProperty(SUFFIX).label("Suffix")
             .isRequired(false)
             .isExpressionable(true)
-            .description("The suffix that comes after a completion of inserted text.")
+            .instructionText("The suffix that comes after a completion of inserted text.")
             .placeholder("null")
             .build(),
         booleanProperty(ECHO).label("Echo")
             .isRequired(false)
             .isExpressionable(true)
-            .description("Echo back the prompt in addition to the completion. This parameter cannot be used with gpt-35-turbo.")
+            .instructionText("Echo back the prompt in addition to the completion. This parameter cannot be used with gpt-35-turbo.")
             .placeholder("false")
             .build(),
         listTypeProperty(STOP).label("Stop")
@@ -297,16 +311,20 @@ private static String getChoices(String responseBody) {
             .isRequired(false)
             .isExpressionable(true)
             .description("Up to four sequences where the API will stop generating further tokens. The returned text won't contain the stop sequence.")
+            .instructionText("API will stop generating further tokens at this or these sequences. Follow the format:\n" +
+                "{\n\t\"example sequence # 1\",\n\t\"example sequence #2\"\n }")
             .build(),
         textProperty(PRESENCE_PENALTY).label("Presence Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("0.0")
-            .description("Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
+            .description("Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
+            .instructionText("Number between -2.0 and 2.0.")
             .build(),
         textProperty(FREQUENCY_PENALTY).label("Frequency Penalty")
             .isRequired(false)
             .isExpressionable(true)
+            .instructionText("Number between -2.0 and 2.0.")
             .placeholder("0.0")
             .description("Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.")
             .build(),
@@ -315,6 +333,7 @@ private static String getChoices(String responseBody) {
             .isExpressionable(true)
             .description("Generates best_of completions server-side and returns the \"best\" (the one with the lowest log probability per token).Because this parameter generates many completions, it can quickly consume your token quota. Use carefully and ensure that you have reasonable settings for max_tokens and stop. This parameter cannot be used with gpt-35-turbo.")
             .placeholder("Must be greater than or equal to N. Will default to be equal to N.")
+            .instructionText("Generates this many best_of completions server-side. Must be greater than or equal to N. This parameter cannot be used with gpt-35-turbo.")
             .build()
     );
   }
@@ -387,7 +406,10 @@ private static String getChoices(String responseBody) {
     String tempString = integrationConfiguration.getValue(TEMPERATURE);
     Double temperature = 1.0;
     if (tempString != null) { temperature = Double.valueOf(tempString); }
-    if (temperature < 0.0 || temperature > 2.0) { temperature = 1.0; }
+    if (temperature < 0.0 || temperature > 2.0) {
+//      temperature = 1.0;
+      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be a value between -2 and 0."));
+    }
     inputMap.put(TEMPERATURE, temperature);
     requestDiagnostic.put("Temperature", temperature);
 
