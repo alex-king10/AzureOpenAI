@@ -114,17 +114,10 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .build();
 
     Response response = null;
-//    try {
     response = client.newCall(request).execute();
     responseBody = response.body().string();
-//    } catch (Exception e) {
-//      return response.body().string();
-//    }
-
     
-//tested here for error details - call from here?
     response.close();
-
     return responseBody;
 
   }
