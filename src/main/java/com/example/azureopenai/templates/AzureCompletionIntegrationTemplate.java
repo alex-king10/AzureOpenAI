@@ -12,6 +12,7 @@ import static std.ConstantKeys.PRESENCE_PENALTY;
 import static std.ConstantKeys.STOP;
 import static std.ConstantKeys.TEMPERATURE;
 import static std.ConstantKeys.USER;
+import static std.SharedMethods.getErrorDetails;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import org.json.JSONObject;
 import com.appian.connectedsystems.simplified.sdk.SimpleIntegrationTemplate;
 import com.appian.connectedsystems.simplified.sdk.configuration.SimpleConfiguration;
 import com.appian.connectedsystems.templateframework.sdk.ExecutionContext;
+import com.appian.connectedsystems.templateframework.sdk.IntegrationError;
 import com.appian.connectedsystems.templateframework.sdk.IntegrationResponse;
 import com.appian.connectedsystems.templateframework.sdk.TemplateId;
 import com.appian.connectedsystems.templateframework.sdk.configuration.BooleanDisplayMode;
@@ -136,6 +138,24 @@ private static String getChoices(String responseBody) {
 
   private static String getFullEndpoint(String resourceName, String deploymentID, String APIVersion) {
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/completions?api-version=%s", resourceName, deploymentID, APIVersion);
+  }
+
+  private static ArrayList<String> getResponseContent(String responseBody) {
+    String responseStr = responseBody;
+    JSONObject jsonResponse = new JSONObject(responseStr);
+    JSONArray choices = jsonResponse.getJSONArray("choices");
+    ArrayList<String> contentArr = new ArrayList<>();
+
+    if (choices.length() > 0) {
+      for (int i = 0; i < choices.length(); i++) {
+        JSONObject choice = choices.getJSONObject(i);
+//        JSONObject text = choice.getJSONObject("text");
+        contentArr.add(choice.getString("text"));
+
+      }
+    }
+
+    return contentArr;
   }
 
 //  private static ArrayList<String> getCompletionResponse()
@@ -308,7 +328,7 @@ private static String getChoices(String responseBody) {
     //    1. set up step
     //    retrieve from CSP
     Map<String,Object> requestDiagnostic = new HashMap<>();
-    Map<String,Object> result = new HashMap<>();
+//    Map<String,Object> result = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(YOUR_RESOURCE_NAME);
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
@@ -447,63 +467,50 @@ private static String getChoices(String responseBody) {
     inputMap.put(BEST_OF, best_of);
     requestDiagnostic.put("Best of", best_of);
 
-
-    //   2. make remote request
-
-    final long start = System.currentTimeMillis();
-
-    String responseHelper = completionAPICall(apiKey, endpoint, inputMap);
-//    System.out.println(responseHelper);
-//
-//    OkHttpClient client = new OkHttpClient();
-//    String requestBody = String.format(
-//        "{\"prompt\": %s}", prompt);
-//
-//    MediaType mediaType = MediaType.parse("application/json");
-//
-//    RequestBody body = RequestBody.create(mediaType, requestBody);
-//
-//    Request request = new Request.Builder()
-//        .url(endpoint)
-//        .method("POST", body)
-//        .addHeader("api-key", apiKey)
-//        .addHeader("Content-Type","application/json")
-//        .build();
-//
-//    Response response = null;
-//    String responseBody = "";
-//    try {
-//      response = client.newCall(request).execute();
-//      responseBody = response.body().string();
-//
-//    } catch (IOException e) {
-//      throw new RuntimeException(e);
-//    }
-//    response.close();
-
-    result.put("response", responseHelper);
-//    result.put("response", responseBody);
-
-    final long end = System.currentTimeMillis();
-    final long executionTime = end - start;
-    //    create diagnostics (modeled after Google Drive CS Example)
     Map<String, Object> resultMap = new HashMap<>();
-    resultMap.put("Response", responseHelper);
-//    resultMap.put("Response", responseBody);
-    //    resultMap.put("Content", )
+    Map<String, Object> diagnosticResponse = new HashMap<>();
     IntegrationDesignerDiagnostic.IntegrationDesignerDiagnosticBuilder diagnosticBuilder = IntegrationDesignerDiagnostic
         .builder();
 
-    Map<String, Object> diagnosticResponse = new HashMap<>();
-//    String embedding = getEmbeddingArray(responseBody).toString();
-//    diagnosticResponse.put("Choices", getChoices(responseHelper));
+    //   2. make remote request
+    String response = "";
+    final long start = System.currentTimeMillis();
+    IntegrationError error = null;
+    final IntegrationDesignerDiagnostic diagnostic;
 
-    IntegrationDesignerDiagnostic diagnostic = diagnosticBuilder
-        .addExecutionTimeDiagnostic(executionTime)
-        .addRequestDiagnostic(requestDiagnostic)
-        .addResponseDiagnostic(diagnosticResponse)
-        .build();
+    try {
+      response = completionAPICall(apiKey, endpoint, inputMap);
+      resultMap.put("Completion", getResponseContent(response));
 
+    } catch (Exception e) {
+      String[] errorDetails = getErrorDetails(response);
+      error = IntegrationError.builder()
+          .title("Error Title: " + errorDetails[0])
+          .message("While calling the Completion endpoint, an error occurred. Please check your Deployment ID and API Version.\n")
+          .detail(errorDetails[1])
+          .build();
+    } finally {
+      diagnosticResponse.put("Full Response", response);
+
+      final long end = System.currentTimeMillis();
+      final long executionTime = end - start;
+
+      diagnostic = diagnosticBuilder
+          .addExecutionTimeDiagnostic(executionTime)
+          .addRequestDiagnostic(requestDiagnostic)
+          .addResponseDiagnostic(diagnosticResponse)
+          .build();
+    }
+
+    if (error != null) {
+      return IntegrationResponse
+          .forError(error)
+          .withDiagnostic(diagnostic)
+          .build();
+    }
+
+
+    resultMap.put("Successful Response Code", 200);
 
     return IntegrationResponse
         .forSuccess(resultMap)

@@ -51,7 +51,6 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
       embedding = dataObject.getJSONArray("embedding");
     }
     return embedding;
-
   }
   @Override
   protected SimpleConfiguration getConfiguration(

@@ -11,6 +11,7 @@ import static std.ConstantKeys.N;
 import static std.ConstantKeys.PRESENCE_PENALTY;
 import static std.ConstantKeys.TEMPERATURE;
 import static std.ConstantKeys.USER;
+import static std.SharedMethods.getErrorDetails;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,12 +49,12 @@ import okhttp3.Response;
 @IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
 public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTemplate {
 
-  private static String[] getErrorDetails(String responseBdoy) {
-    JSONObject responseJSON = new JSONObject(responseBdoy);
-    String errorTitle = (String)((JSONObject)responseJSON.get("error")).get("code");
-    String message = (String)((JSONObject)responseJSON.get("error")).get("message");
-    return new String[] {errorTitle, message};
-  }
+//  private static String[] getErrorDetails(String responseBdoy) {
+//    JSONObject responseJSON = new JSONObject(responseBdoy);
+//    String errorTitle = (String)((JSONObject)responseJSON.get("error")).get("code");
+//    String message = (String)((JSONObject)responseJSON.get("error")).get("message");
+//    return new String[] {errorTitle, message};
+//  }
   private static String getFullEndpoint(String resourceName, String deploymentID, String APIVersion) {
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/chat/completions?api-version=%s", resourceName, deploymentID, APIVersion);
   }
@@ -427,7 +428,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 //    2. make the remote request
     String response ="";
     ArrayList<String> result = new ArrayList<>();
-//error details works from here
     final long start = System.currentTimeMillis();
     IntegrationError error = null;
     final IntegrationDesignerDiagnostic diagnostic;
@@ -470,7 +470,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     }
     
 
-//    diagnosticResponse.put("Full Response", response);
     resultMap.put("Successful Response Code", 200);
     
     return IntegrationResponse
