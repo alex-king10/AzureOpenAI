@@ -14,6 +14,7 @@ import static std.ConstantKeys.USER;
 import static std.SharedMethods.getErrorDetails;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,24 @@ import okhttp3.Response;
 @IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
 public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTemplate {
 
+  private static Map<String, Object> getFullResponseObject(String responseBody) {
+    JSONObject responseJSON = new JSONObject(responseBody);
+    Map<String, Object> contentMap = new HashMap<>();
+    if (responseJSON.length() > 0) {
+      for (int i = 0; i < responseJSON.length(); i++) {
+        contentMap.put("id",responseJSON.get("id"));
+        contentMap.put("object",responseJSON.get("object"));
+        contentMap.put("created",responseJSON.get("created"));
+        contentMap.put("model",responseJSON.get("model"));
+        //        retrieve generated text
+        contentMap.put("Chat Completions",getResponseContent(responseBody));
+      }
+    }
+
+    return contentMap;
+
+  }
+
   private static String getFullEndpoint(String resourceName, String deploymentID, String APIVersion) {
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/chat/completions?api-version=%s", resourceName, deploymentID, APIVersion);
   }
@@ -67,11 +86,11 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         contentArr.add(message.getString("content"));
       }
     }
-    if (choices.length() > 0) {
-      JSONObject choice = choices.getJSONObject(0);
-      JSONObject message = choice.getJSONObject("message");
-      content = message.getString("content");
-    }
+//    if (choices.length() > 0) {
+//      JSONObject choice = choices.getJSONObject(0);
+//      JSONObject message = choice.getJSONObject("message");
+//      content = message.getString("content");
+//    }
     return contentArr;
   }
 
@@ -89,7 +108,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     String requestBody = String.format(
         "{\"messages\": %s, \"temperature\": %f, \"n\": %d," +
           "\"max_tokens\": %d, \"presence_penalty\": %f, \"frequency_penalty\": %f," +
-          "\"logit_bias\": %s, \"user\": \"%s\"}",
+            "\"logit_bias\": %s, \"user\": \"%s\"}",
         prompt, temperature, n, max_tokens, presence_pen, frequency_pen,
         logit_bias, user);
 
@@ -322,8 +341,13 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     Double temperature = 1.0;
     String temperatureStr = integrationConfiguration.getValue(TEMPERATURE);
     if (temperatureStr!=null) { temperature = Double.valueOf(temperatureStr);}
-    if (temperature < 0.0 || temperature > 2.0) { temperature = 1.0; }
+    if (temperature < 0.0 || temperature > 2.0) {
+      temperature = 1.0;
+//      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Name cannot be longer than 255 characters"));
+      integrationConfiguration.setErrors(Arrays.asList("Name cannot be longer than 255 characters"));
+    }
     //    else { alert("Temperature must be between 0 and 2."); }
+
     inputMap.put("temperature", temperature);
     requestDiagnostic.put("Temperature", temperature);
 
@@ -392,7 +416,8 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     try {
 //      type Response
       response = chatCompletionCall(apiKey, endpoint, inputMap);
-      resultMap.put("Chat Completion", getResponseContent(response));
+//      resultMap.put("Chat Completion", getResponseContent(response));
+      resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
 

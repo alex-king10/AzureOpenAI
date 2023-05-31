@@ -94,21 +94,13 @@ private static String getChoices(String responseBody) {
     OkHttpClient client = new OkHttpClient();
     String requestBody;
 
-    if (!gpt35turbo) {
-      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
-        "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
-        "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
-        "\"temperature\": %f}",
-        prompt, stop, max_tokens, top_p, logit_bias,
-        user, n,presence_pen, freq_pen, best_of, logprobs, echo, temperature );
-    } else {
-      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
-              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
-              "\"frequency_penalty\": %f, " +
-              "\"temperature\": %f}",
-          prompt, stop, max_tokens, top_p, logit_bias,
-          user, n,presence_pen, freq_pen, temperature );
-    }
+//    if (!gpt35turbo) {
+    requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
+      "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
+      "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
+      "\"temperature\": %f}",
+      prompt, stop, max_tokens, top_p, logit_bias,
+      user, n,presence_pen, freq_pen, best_of, logprobs, echo, temperature );
 
     MediaType mediaType = MediaType.parse("application/json");
 
@@ -141,6 +133,24 @@ private static String getChoices(String responseBody) {
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/completions?api-version=%s", resourceName, deploymentID, APIVersion);
   }
 
+  private static Map<String, Object> getFullResponseObject(String responseBody) {
+    JSONObject responseJSON = new JSONObject(responseBody);
+    Map<String, Object> contentMap = new HashMap<>();
+    if (responseJSON.length() > 0) {
+      for (int i = 0; i < responseJSON.length(); i++) {
+        contentMap.put("id",responseJSON.get("id"));
+        contentMap.put("object",responseJSON.get("object"));
+        contentMap.put("created",responseJSON.get("created"));
+        contentMap.put("model",responseJSON.get("model"));
+//        retrieve generated text
+        contentMap.put("Completions",getResponseContent(responseBody));
+      }
+    }
+
+    return contentMap;
+
+  }
+
   private static ArrayList<String> getResponseContent(String responseBody) {
     String responseStr = responseBody;
     JSONObject jsonResponse = new JSONObject(responseStr);
@@ -150,7 +160,6 @@ private static String getChoices(String responseBody) {
     if (choices.length() > 0) {
       for (int i = 0; i < choices.length(); i++) {
         JSONObject choice = choices.getJSONObject(i);
-//        JSONObject text = choice.getJSONObject("text");
         contentArr.add(choice.getString("text"));
 
       }
@@ -407,7 +416,7 @@ private static String getChoices(String responseBody) {
     Double temperature = 1.0;
     if (tempString != null) { temperature = Double.valueOf(tempString); }
     if (temperature < 0.0 || temperature > 2.0) {
-//      temperature = 1.0;
+      temperature = 1.0;
       integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be a value between -2 and 0."));
     }
     inputMap.put(TEMPERATURE, temperature);
@@ -502,7 +511,9 @@ private static String getChoices(String responseBody) {
 
     try {
       response = completionAPICall(apiKey, endpoint, inputMap);
-      resultMap.put("Completion", getResponseContent(response));
+//      resultMap.put("Completion", getResponseContent(response));
+//      JSONObject responseObj = new JSONObject(response);
+      resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
       String[] errorDetails = getErrorDetails(response);
@@ -512,7 +523,9 @@ private static String getChoices(String responseBody) {
           .detail(errorDetails[1])
           .build();
     } finally {
+
       diagnosticResponse.put("Full Response", response);
+//      diagnosticResponse.put("JSON Response", responseObj);
 
       final long end = System.currentTimeMillis();
       final long executionTime = end - start;
