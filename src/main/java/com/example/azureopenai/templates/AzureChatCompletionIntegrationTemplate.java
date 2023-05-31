@@ -49,12 +49,6 @@ import okhttp3.Response;
 @IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
 public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTemplate {
 
-//  private static String[] getErrorDetails(String responseBdoy) {
-//    JSONObject responseJSON = new JSONObject(responseBdoy);
-//    String errorTitle = (String)((JSONObject)responseJSON.get("error")).get("code");
-//    String message = (String)((JSONObject)responseJSON.get("error")).get("message");
-//    return new String[] {errorTitle, message};
-//  }
   private static String getFullEndpoint(String resourceName, String deploymentID, String APIVersion) {
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/chat/completions?api-version=%s", resourceName, deploymentID, APIVersion);
   }
@@ -71,7 +65,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         JSONObject choice = choices.getJSONObject(i);
         JSONObject message = choice.getJSONObject("message");
         contentArr.add(message.getString("content"));
-//        content = message.getString("content");
       }
     }
     if (choices.length() > 0) {
@@ -154,14 +147,16 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     Boolean devSettingsState = integrationConfiguration.getValue(DEV_SETTINGS);
     if(devSettingsState == null || !devSettingsState) {
       return integrationConfiguration.setProperties(
-      textProperty(DEPLOYMENT_ID).label("Deployment ID")
-          .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
-          .placeholder("ex: GPT4_32K")
-          .isRequired(true)
-          .isExpressionable(true)
-          .build(),
+        textProperty(DEPLOYMENT_ID).label("Deployment ID")
+            .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
+            .placeholder("ex: GPT4_32K")
+            .instructionText("Name of your deployment ID for this integration's appropriate model.")
+            .isRequired(true)
+            .isExpressionable(true)
+            .build(),
           textProperty(API_VERSION).label("API Version")
               .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
+              .instructionText("API version to use for this operation.")
               .isRequired(true)
               .isExpressionable(true)
               .placeholder("ex: 2023-05-15")
@@ -170,7 +165,10 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
               .itemType(TypeReference.from(messageInputType))
               .isExpressionable(true)
               .isRequired(true)
-              .description("This will be your initial message to Azure's OpenAI Chat Bot")
+              .description("The messages to generate chat completions for, in the chat format.")
+              .instructionText("The messages to generate chat completions for, in the chat format: " +
+                  "{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
+                  "    {\"role\": \"user\", \"content\": \"What does Appian's platform do?\"}")
               .build(),
           booleanProperty(DEV_SETTINGS).label("Developer Settings")
               .displayMode(BooleanDisplayMode.CHECKBOX)
@@ -186,12 +184,14 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         // access the values during execution
         textProperty(DEPLOYMENT_ID).label("Deployment ID")
             .description("The deployment name you chose when you deployed the model. This will be specific to different models deployed in your account.")
+            .instructionText("Name of your deployment ID for this integration's appropriate model.")
             .placeholder("ex: GPT4_32K")
             .isRequired(true)
             .isExpressionable(true)
             .build(),
         textProperty(API_VERSION).label("API Version")
             .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
+            .instructionText("API version to use for this operation.")
             .isRequired(true)
             .isExpressionable(true)
             .placeholder("ex: 2023-05-15")
@@ -200,8 +200,12 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .itemType(TypeReference.from(messageInputType))
             .isExpressionable(true)
             .isRequired(true)
-            .description("This will be your initial message to Azure's OpenAI Chat Bot")
+            .description("The messages to generate chat completions for, in the chat format.")
+            .instructionText("The messages to generate chat completions for, in the chat format: " +
+                "{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
+                "    {\"role\": \"user\", \"content\": \"What does Appian's platform do?\"}")
             .build(),
+
         booleanProperty(DEV_SETTINGS).label("Developer Settings")
             .displayMode(BooleanDisplayMode.CHECKBOX)
             .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
@@ -209,32 +213,37 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .build(),
         textProperty(TEMPERATURE).label("Temperature")
             .isRequired(false)
+            .instructionText("Sampling temperature to use, between 0 and 2")
             .isExpressionable(true)
-            .description("What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. Default of 1.")
+            .description("Higher values means the model will take more risks. Default of 1.")
             .placeholder("1.0")
             .build(),
         integerProperty(N).label("n")
             .isRequired(false)
+            .instructionText("Number of chat completion choices to generate for each input message.")
             .isExpressionable(true)
-            .description("How many chat completion choices to generate for each input message. Default of 1.")
+            .description("Default of 1.")
             .placeholder("1")
             .build(),
         integerProperty(MAX_TOKENS).label("Max Tokens")
             .isRequired(false)
             .isExpressionable(true)
+            .instructionText("Maximum number of tokens to generate in the completion.")
             .placeholder("4096")
-            .description("The maximum number of tokens allowed for the generated answer. By default, the number of tokens the model can return will be 4096 - prompt tokens.")
+            .description("The token count of your prompt plus max_tokens can't exceed the model's context length. Default of 4096.")
             .build(),
         textProperty(PRESENCE_PENALTY).label("Presence Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("0.0")
-            .description("Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
+            .description("Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
+            .instructionText("Number between -2.0 and 2.0.")
             .build(),
         textProperty(FREQUENCY_PENALTY).label("Frequency Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("0.0")
+            .instructionText("Number between -2.0 and 2.0.")
             .description("Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.")
             .build(),
         textProperty(LOGIT_BIAS).label("Logit Bias")
@@ -242,12 +251,14 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .isExpressionable(true)
             .placeholder("{}")
             .description("Modify the likelihood of specified tokens appearing in the completion. Accepts a json object that maps tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100.")
+            .instructionText("Enter Logit Bias as JSON of token to bias value from -100 to 100.")
             .build(),
         textProperty(USER).label("User")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("firstName.lastName")
             .description("A unique identifier representing your end-user, which can help Azure OpenAI to monitor and detect abuse.")
+            .instructionText("Enter a username as a unique identifier")
             .build()
     );
   }

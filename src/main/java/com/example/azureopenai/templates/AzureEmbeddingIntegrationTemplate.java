@@ -106,16 +106,18 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
             .build(),
         textProperty(API_VERSION).label("API Version")
             .description("The API version to use for this operation. This follows the YYYY-MM-DD format.")
+            .instructionText("API version to use for this operation.")
             .isRequired(true)
             .isExpressionable(true)
             .placeholder("ex: 2023-05-15")
             .build(),
         textProperty(INPUT).label("Input for embeddings")
             .isRequired(true)
-//            false if properties need to be hard coded and baked by the time user presses send
             .isExpressionable(true)
-//            to change later when it is more than chat completion?
-            .description("Input text to get embeddings for, encoded as a string.")
+//            .description("Input text to get embeddings for, encoded as a string.")
+//            .instructionText("Text to generate embeddings for as an array of strings in the following format:\n" +
+//                "{\n" + "    \"appian\",\n" + "    \"low code\"\n" + "}")
+            .instructionText("Text to generate embeddings for, encoded as a string.")
             .displayHint(DisplayHint.NORMAL)
             .build()
     );
