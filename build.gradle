@@ -15,16 +15,19 @@ dependencies {
   implementation 'org.json:json:20230227'
 }
 
-
 jar {
   duplicatesStrategy = DuplicatesStrategy.FAIL
   into('META-INF/lib') {
     from(configurations.runtimeClasspath)
   }
 
+  into('src') {
+    from(sourceSets.main.allJava)
+  }
+
   manifest {
     attributes("Spring-Context": "*;publish-context:=false")
   }
+
+
 }
-
-
