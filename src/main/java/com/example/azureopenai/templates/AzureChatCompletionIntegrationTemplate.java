@@ -76,7 +76,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     JSONObject jsonResponse = new JSONObject(responseBody);
     JSONArray choices = jsonResponse.getJSONArray("choices");
     ArrayList<String> contentArr = new ArrayList<>();
-    String content = "";
 
     if (choices.length() > 0) {
       for (int i = 0; i < choices.length(); i++) {
@@ -85,11 +84,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         contentArr.add(message.getString("content"));
       }
     }
-//    if (choices.length() > 0) {
-//      JSONObject choice = choices.getJSONObject(0);
-//      JSONObject message = choice.getJSONObject("message");
-//      content = message.getString("content");
-//    }
     return contentArr;
   }
 
@@ -124,7 +118,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .addHeader("Content-Type","application/json")
         .build();
 
-    Response response = null;
+    Response response;
     response = client.newCall(request).execute();
     responseBody = response.body().string();
     
@@ -179,8 +173,8 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
               .isRequired(true)
               .description("The messages to generate chat completions for, in the chat format.")
               .instructionText("The messages to generate chat completions for, in the chat format: " +
-                  "{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
-                  "    {\"role\": \"user\", \"content\": \"What does Appian's platform do?\"}")
+                  "{{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
+                  "    {\"role\": \"user\", \"content\": \"What does Appian's platform do?\"}}")
               .build(),
           booleanProperty(DEV_SETTINGS).label("Developer Settings")
               .displayMode(BooleanDisplayMode.CHECKBOX)
@@ -296,8 +290,8 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
     requestDiagnostic.put("Endpoint", endpoint);
 //    retrieve data from integration
-//      messages
 
+//      messages
     List<Object> messages;
     String role;
     String content;
@@ -319,8 +313,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         else { messageString += "]"; }
 
       }
-
-      System.out.println(messageString);
 
     } catch (Exception e) {
       System.out.println(e.getMessage());
@@ -348,23 +340,17 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     requestDiagnostic.put("Maximum Number of Tokens", max_tokens);
 
 //    presence_penalty
-//    String presencePen = integrationConfiguration.getValue(PRESENCE_PENALTY);
     Double presencePenNum = integrationConfiguration.getValue(PRESENCE_PENALTY);
-    //    if value was given convert to double
-//    if(presencePen != null) presencePenNum = Double.valueOf(presencePen);
-
+//    throws error if presencePenNum is null, default is 0.0
+    if (presencePenNum == null) presencePenNum = 0.0;
     inputMap.put("presence_penalty", presencePenNum);
     requestDiagnostic.put("Presence Penalty", presencePenNum);
 
 //    frequency_penalty
-//    String frequencyPen = integrationConfiguration.getValue(FREQUENCY_PENALTY);
+
     Double freqPenNum= integrationConfiguration.getValue(FREQUENCY_PENALTY);
-    //    if value was given convert to double
-//    if(frequencyPen != null) freqPenNum = Double.valueOf(frequencyPen);
-    //    if value not between -2 and 2, set to default
-//    if (freqPenNum > 2.0 || freqPenNum < -2.0) {
-//      freqPenNum = 0.0;
-//    }
+    //    throws error if freqPenNum is null, default is 0.0
+    if (freqPenNum == null) freqPenNum = 0.0;
     inputMap.put("frequency_penalty", freqPenNum);
     requestDiagnostic.put("Frequency Penalty", freqPenNum);
 
@@ -388,7 +374,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
 //    2. make the remote request
     String response ="";
-    ArrayList<String> result = new ArrayList<>();
     final long start = System.currentTimeMillis();
     IntegrationError error = null;
     final IntegrationDesignerDiagnostic diagnostic;
@@ -396,7 +381,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     try {
 //      type Response
       response = chatCompletionCall(apiKey, endpoint, inputMap);
-//      resultMap.put("Chat Completion", getResponseContent(response));
       resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {

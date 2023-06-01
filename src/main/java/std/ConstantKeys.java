@@ -1,6 +1,5 @@
 package std;
 
-import java.util.ArrayList;
 
 public interface ConstantKeys {
   String APIKEY = "apiKey";

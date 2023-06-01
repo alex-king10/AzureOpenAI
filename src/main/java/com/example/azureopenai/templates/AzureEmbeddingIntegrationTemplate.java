@@ -31,9 +31,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-// Must provide an integration id. This value need only be unique for this connected system
 @TemplateId(name="AzureEmbeddingIntegrationTemplate")
-// Set template type to READ since this integration does not have side effects
 @IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
 public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate {
 
@@ -55,7 +53,7 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
         .addHeader("Content-Type","application/json")
         .build();
 
-    Response response = null;
+    Response response;
     String responseBody;
 
     response = client.newCall(request).execute();
@@ -66,7 +64,6 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
 
 
   }
-  public static final String INTEGRATION_PROP_KEY = "intProp";
 
   public static final String INPUT = "input";
   private static String getFullEndpoint(String resourceName, String deploymentID, String APIVersion) {
@@ -74,8 +71,7 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
   }
 
   private ArrayList<String> getEmbeddingArray(String response) {
-    String responseStr = response;
-    JSONObject jsonResponse = new JSONObject(responseStr);
+    JSONObject jsonResponse = new JSONObject(response);
     JSONArray data = jsonResponse.getJSONArray("data");
     ArrayList<String> embedding = new ArrayList<>();
     if (data.length() > 0) {
@@ -114,9 +110,6 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
         textProperty(INPUT).label("Input for embeddings")
             .isRequired(true)
             .isExpressionable(true)
-//            .description("Input text to get embeddings for, encoded as a string.")
-//            .instructionText("Text to generate embeddings for as an array of strings in the following format:\n" +
-//                "{\n" + "    \"appian\",\n" + "    \"low code\"\n" + "}")
             .instructionText("Text to generate embeddings for, encoded as a string.")
             .displayHint(DisplayHint.NORMAL)
             .build()
@@ -132,7 +125,6 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
 //    1. set up step
 //    retrieve from CSP
     Map<String,Object> requestDiagnostic = new HashMap<>();
-//    Map<String,Object> result = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(YOUR_RESOURCE_NAME);
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
@@ -141,7 +133,7 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
     requestDiagnostic.put("Endpoint", endpoint);
 
 //    retrieve from integration
-    String input = "";
+    String input;
     input = integrationConfiguration.getValue(INPUT);
     requestDiagnostic.put("Input for embedding", input);
 

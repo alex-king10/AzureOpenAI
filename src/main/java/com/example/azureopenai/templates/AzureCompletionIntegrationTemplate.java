@@ -57,26 +57,17 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
   public static final String SUFFIX = "suffix";
   public static final String ECHO = "echo";
   public static final String BEST_OF = "best_of";
-  public static final String GPT35TURBO = "gpt_35_turbo";
 
-
-private static String getChoices(String responseBody) {
-  JSONObject jsonResponse = new JSONObject(responseBody);
-  JSONArray choices = jsonResponse.getJSONArray("choices");
-  return choices.toString();
-}
 
   private static String completionAPICall(String apiKey, String endpoint, HashMap<String, Object> inputMap) {
 
-    String prompt = (String)(inputMap.get(PROMPT).toString());
+    String prompt = (inputMap.get(PROMPT).toString());
     int max_tokens = (Integer)inputMap.get(MAX_TOKENS);
     Double temperature = (Double)inputMap.get(TEMPERATURE);
     Double top_p = (Double)inputMap.get(TOP_P);
-    Boolean gpt35turbo = (Boolean)inputMap.get(GPT35TURBO);
 
-//    might need to manipulate array to get Str
     String stop;
-    if (inputMap.get(STOP) != null) {stop = (String)(inputMap.get(STOP).toString());}
+    if (inputMap.get(STOP) != null) {stop = (inputMap.get(STOP).toString());}
     else { stop = null; }
     String logit_bias = (String)inputMap.get(LOGIT_BIAS);
     String user = (String)inputMap.get(USER);
@@ -93,7 +84,6 @@ private static String getChoices(String responseBody) {
     OkHttpClient client = new OkHttpClient();
     String requestBody;
 
-//    if (!gpt35turbo) {
     requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
       "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
       "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
@@ -112,8 +102,8 @@ private static String getChoices(String responseBody) {
         .addHeader("Content-Type","application/json")
         .build();
 
-    Response response = null;
-    String responseBody = "";
+    Response response;
+    String responseBody;
     try {
       response = client.newCall(request).execute();
       responseBody = response.body().string();
@@ -122,7 +112,6 @@ private static String getChoices(String responseBody) {
       throw new RuntimeException(e);
     }
     response.close();
-//    result.put("response", responseBody);
 
     return responseBody;
   }
@@ -151,8 +140,7 @@ private static String getChoices(String responseBody) {
   }
 
   private static ArrayList<String> getResponseContent(String responseBody) {
-    String responseStr = responseBody;
-    JSONObject jsonResponse = new JSONObject(responseStr);
+    JSONObject jsonResponse = new JSONObject(responseBody);
     JSONArray choices = jsonResponse.getJSONArray("choices");
     ArrayList<String> contentArr = new ArrayList<>();
 
@@ -167,14 +155,12 @@ private static String getChoices(String responseBody) {
     return contentArr;
   }
 
-//  private static ArrayList<String> getCompletionResponse()
   @Override
   protected SimpleConfiguration getConfiguration(
       SimpleConfiguration integrationConfiguration,
       SimpleConfiguration connectedSystemConfiguration,
       PropertyPath propertyPath,
       ExecutionContext executionContext) {
-
 
     Boolean devSettingState = integrationConfiguration.getValue(DEV_SETTINGS);
     System.out.println(devSettingState);
@@ -198,10 +184,8 @@ private static String getChoices(String responseBody) {
           listTypeProperty(PROMPT).label("Prompt")
               .itemType(SystemType.STRING)
               .isRequired(false)
-              //            false if properties need to be hard coded and baked by the time user presses send
               .isExpressionable(true)
               .description("Default is the beginning of a new document.")
-              //            to change later when it is more than chat completion?
               .instructionText("Prompt(s) to generate completions for, encoded as a list of strings. In the following format: \n" +
                   "{\n\t\"Once upon a time...\",\n\t\"In a land far away\"\n }")
               .build(),
@@ -231,10 +215,8 @@ private static String getChoices(String responseBody) {
         listTypeProperty(PROMPT).label("Prompt")
             .itemType(SystemType.STRING)
             .isRequired(false)
-            //            false if properties need to be hard coded and baked by the time user presses send
             .isExpressionable(true)
             .description("Default is the beginning of a new document.")
-            //            to change later when it is more than chat completion?
             .instructionText("Prompt(s) to generate completions for, encoded as a list of strings. In the following format: \n" +
                 "{\n\t\"Once upon a time...\",\n\t\"In a land far away\"\n }")
             .build(),
@@ -257,7 +239,7 @@ private static String getChoices(String responseBody) {
             .instructionText("Sampling temperature to use, between 0 and 2")
             .description("Higher values means the model will take more risks. Default of 1.")
             .build(),
-        textProperty(TOP_P).label("Top P")
+        doubleProperty(TOP_P).label("Top P")
             .isRequired(false)
             .isExpressionable(true)
             .description("An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. We generally recommend altering this or temperature but not both.")
@@ -312,14 +294,14 @@ private static String getChoices(String responseBody) {
             .instructionText("API will stop generating further tokens at this or these sequences. Follow the format:\n" +
                 "{\n\t\"example sequence # 1\",\n\t\"example sequence #2\"\n }")
             .build(),
-        textProperty(PRESENCE_PENALTY).label("Presence Penalty")
+        doubleProperty(PRESENCE_PENALTY).label("Presence Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("0.0")
             .description("Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
             .instructionText("Number between -2.0 and 2.0.")
             .build(),
-        textProperty(FREQUENCY_PENALTY).label("Frequency Penalty")
+        doubleProperty(FREQUENCY_PENALTY).label("Frequency Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .instructionText("Number between -2.0 and 2.0.")
@@ -343,9 +325,8 @@ private static String getChoices(String responseBody) {
       SimpleConfiguration connectedSystemConfiguration,
       ExecutionContext executionContext) {
     //    1. set up step
-    //    retrieve from CSP
+  //    retrieve from CSP
     Map<String,Object> requestDiagnostic = new HashMap<>();
-//    Map<String,Object> result = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(YOUR_RESOURCE_NAME);
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
@@ -357,19 +338,13 @@ private static String getChoices(String responseBody) {
     //    retrieve data from integration
     HashMap<String, Object> inputMap = new HashMap<>();
 
-    //    gpt-35-turbo
-    Boolean gpt35Turbo = integrationConfiguration.getValue(GPT35TURBO);
-    if (gpt35Turbo == null) gpt35Turbo = true;
-    inputMap.put(GPT35TURBO, gpt35Turbo);
-
 //    prompt
     ArrayList<Object> prompt = integrationConfiguration.getValue(PROMPT);
-    ArrayList<String> promptArr = new ArrayList<>();
-    String formattedStr = "";
+    String formattedStr;
 
     if (prompt != null) {
       for (int i = 0; i < prompt.size(); i++) {
-        formattedStr = String.format("\"%s\"", ((String)((PropertyState)prompt.get(i)).getValue()));
+        formattedStr = String.format("\"%s\"", (((PropertyState)prompt.get(i)).getValue()));
         prompt.set(i, formattedStr);
       }
     } else {
@@ -385,7 +360,7 @@ private static String getChoices(String responseBody) {
     String stopString;
     if (stopArr != null) {
       for (int i = 0; i < stopArr.size(); i++) {
-        stopString = String.format("\"%s\"", ((String)((PropertyState)stopArr.get(i)).getValue()));
+        stopString = String.format("\"%s\"", (((PropertyState)stopArr.get(i)).getValue()));
         stopArr.set(i, stopString);
       }
     }
@@ -401,27 +376,18 @@ private static String getChoices(String responseBody) {
     requestDiagnostic.put("Max Tokens", max_tokens);
 
 //    temperature
-//    Double tempString = integrationConfiguration.getValue(TEMPERATURE);
     Double temperature = integrationConfiguration.getValue(TEMPERATURE);
-//    if (tempString != null) { temperature = Double.valueOf(tempString); }
-//    if (temperature < 0.0 || temperature > 2.0) {
-//      temperature = 1.0;
-//      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be a value between -2 and 0."));
-//    }
     inputMap.put(TEMPERATURE, temperature);
     requestDiagnostic.put("Temperature", temperature);
 
 // top p
-//    edge cases: less than or equal to 1, no neg.
-    String topPStr = integrationConfiguration.getValue(TOP_P);
-    Double top_p = 1.0;
-    if (topPStr != null) { top_p = Double.valueOf(topPStr); }
-    if (top_p < 0.0 || top_p > 1.0) {top_p = 1.0;}
+    Double top_p = integrationConfiguration.getValue(TOP_P);
     inputMap.put(TOP_P, top_p);
     requestDiagnostic.put("Top P", top_p);
 
 //    logit bias
     String logitBias = integrationConfiguration.getValue(LOGIT_BIAS);
+//    default of logit bias is {}, errors if left as null
     if (logitBias == null) logitBias = new JSONObject().toString();
     inputMap.put(LOGIT_BIAS, logitBias);
     requestDiagnostic.put("Logit Bias", logitBias);
@@ -439,45 +405,31 @@ private static String getChoices(String responseBody) {
     requestDiagnostic.put("N", nInt);
 
 //    log probs
-//    need a new deployment, don't include yet
     Integer logProbs = integrationConfiguration.getValue(LOGPROBS);
     inputMap.put(LOGPROBS, logProbs);
     requestDiagnostic.put("Log Probs", logProbs);
 
 //    suffix
-//      if nothing entered, passes in null
     String suffix = integrationConfiguration.getValue(SUFFIX);
     inputMap.put(SUFFIX, suffix);
     requestDiagnostic.put("Suffix", suffix);
 
-//can't have suffix and echo at same time - where should I account for that?
-
-//    Echo - needs a new deployment
+//    Echo
     Boolean echo = integrationConfiguration.getValue(ECHO);
     inputMap.put(ECHO, echo);
     requestDiagnostic.put("Echo", echo);
 
 //    presence_penalty
-    String presencePen = integrationConfiguration.getValue(PRESENCE_PENALTY);
-    double presencePenNum = 0.0;
-    //    if value was given convert to double
-    if(presencePen != null) presencePenNum = Double.valueOf(presencePen);
-    //    if value not between -2 and 2, set to default
-    if (presencePenNum > 2.0 || presencePenNum < -2.0) {
-      presencePenNum = 0.0;
-    }
+    Double presencePenNum = integrationConfiguration.getValue(PRESENCE_PENALTY);
+    //  throws error if left as null, default of 0.0
+    if (presencePenNum == null) presencePenNum = 0.0;
     inputMap.put(PRESENCE_PENALTY, presencePenNum);
     requestDiagnostic.put("Presence Penalty", presencePenNum);
 
 //    frequency_penalty
-    String frequencyPen = integrationConfiguration.getValue(FREQUENCY_PENALTY);
-    double freqPenNum= 0.0;
-    //    if value was given convert to double
-    if(frequencyPen != null) freqPenNum = Double.valueOf(frequencyPen);
-    //    if value not between -2 and 2, set to default
-    if (freqPenNum > 2.0 || freqPenNum < -2.0) {
-      freqPenNum = 0.0;
-    }
+    Double freqPenNum= integrationConfiguration.getValue(FREQUENCY_PENALTY);
+    //    throws error if left as null, default of 0.0
+    if (freqPenNum == null) freqPenNum = 0.0;
     inputMap.put(FREQUENCY_PENALTY, freqPenNum);
     requestDiagnostic.put("Frequency Penalty", freqPenNum);
 
@@ -500,8 +452,6 @@ private static String getChoices(String responseBody) {
 
     try {
       response = completionAPICall(apiKey, endpoint, inputMap);
-//      resultMap.put("Completion", getResponseContent(response));
-//      JSONObject responseObj = new JSONObject(response);
       resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
@@ -514,7 +464,6 @@ private static String getChoices(String responseBody) {
     } finally {
 
       diagnosticResponse.put("Full Response", response);
-//      diagnosticResponse.put("JSON Response", responseObj);
 
       final long end = System.currentTimeMillis();
       final long executionTime = end - start;
