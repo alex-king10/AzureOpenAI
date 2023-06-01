@@ -9,18 +9,18 @@
     <version major-version="1">
       <connected-system-template key="AzureOpenAICSP"
                                  name="AzureOpenAICSP"
-                                 class="com.example.azureopenai.templates.AzureOpenAICSP"/>
+                                 class="com.appian.azureopenai.templates.AzureOpenAICSP"/>
       <integration-template key="AzureChatCompletionIntegrationTemplate"
                             name="AzureChatCompletionIntegrationTemplate"
-                            class="com.example.azureopenai.templates.AzureChatCompletionIntegrationTemplate"
+                            class="com.appian.azureopenai.templates.AzureChatCompletionIntegrationTemplate"
                             request-policy="read"/>
       <integration-template key="AzureEmbeddingIntegrationTemplate"
                             name="AzureEmbeddingIntegrationTemplate"
-                            class="com.example.azureopenai.templates.AzureEmbeddingIntegrationTemplate"
+                            class="com.appian.azureopenai.templates.AzureEmbeddingIntegrationTemplate"
                             request-policy="read"/>
       <integration-template key="AzureCompletionIntegrationTemplate"
                             name="AzureCompletionIntegrationTemplate"
-                            class="com.example.azureopenai.templates.AzureCompletionIntegrationTemplate"
+                            class="com.appian.azureopenai.templates.AzureCompletionIntegrationTemplate"
                             request-policy="read"/>
     </version>
   </connected-system>
