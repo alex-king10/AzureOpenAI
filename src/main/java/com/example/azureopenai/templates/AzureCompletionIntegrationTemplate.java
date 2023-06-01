@@ -206,11 +206,6 @@ private static String getChoices(String responseBody) {
               .instructionText("Prompt(s) to generate completions for, encoded as a list of strings. In the following format: \n" +
                   "{\n\t\"Once upon a time...\",\n\t\"In a land far away\"\n }")
               .build(),
-//          booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
-//              .displayMode(BooleanDisplayMode.RADIO_BUTTON)
-//              .isExpressionable(true)
-//              .instructionText("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
-//              .build(),
           booleanProperty(DEV_SETTINGS).label("Developer Settings")
               .displayMode(BooleanDisplayMode.CHECKBOX)
               .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")

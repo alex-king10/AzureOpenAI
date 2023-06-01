@@ -7,15 +7,15 @@ import static com.example.azureopenai.templates.AzureChatCompletionIntegrationTe
 import java.util.HashMap;
 import java.util.Map;
 
+import com.appian.connectedsystems.simplified.sdk.SimpleConnectedSystemTemplate;
 import com.appian.connectedsystems.simplified.sdk.configuration.SimpleConfiguration;
-import com.appian.connectedsystems.simplified.sdk.connectiontesting.SimpleTestableConnectedSystemTemplate;
 import com.appian.connectedsystems.templateframework.sdk.ExecutionContext;
 import com.appian.connectedsystems.templateframework.sdk.TemplateId;
 import com.appian.connectedsystems.templateframework.sdk.connectiontesting.TestConnectionResult;
 
 
 @TemplateId(name="AzureOpenAICSP")
-public class AzureOpenAICSP extends SimpleTestableConnectedSystemTemplate {
+public class AzureOpenAICSP extends SimpleConnectedSystemTemplate {
 
   public static final String API_KEY = "APIKey";
   public static final String YOUR_RESOURCE_NAME = "YourResourceName";

@@ -136,13 +136,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
 
   public static final String MESSAGE = "messages";
-//  public static final String TEMPERATURE = "temperature";
-//  public static final String N = "n";
-//  public static final String MAX_TOKENS = "maxTokens";
-//  public static final String PRESENCE_PENALTY = "presencePenalty";
-//  public static final String FREQ_PENALTY = "freqPenalty";
-//  public static final String LOGIT_BIAS = "logitBias";
-//  public static final String USER = "user";
+
   public static final String DEV_SETTINGS = "devSettings";
 
 
@@ -230,11 +224,13 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
             .refresh(RefreshPolicy.ALWAYS)
             .build(),
+//TODO: change all these to double prop
+//        doubleProperty(TEMPERATURE).label("Temperature")
         textProperty(TEMPERATURE).label("Temperature")
             .isRequired(false)
             .instructionText("Sampling temperature to use, between 0 and 2")
             .isExpressionable(true)
-            .description("Higher values means the model will take more risks. Default of 1.")
+            .description("What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.\\nWe generally recommend altering this or top_p but not both. Default of 1.")
             .placeholder("1.0")
             .build(),
         integerProperty(N).label("n")
@@ -341,10 +337,11 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     Double temperature = 1.0;
     String temperatureStr = integrationConfiguration.getValue(TEMPERATURE);
     if (temperatureStr!=null) { temperature = Double.valueOf(temperatureStr);}
+    temperature = 10.0;
     if (temperature < 0.0 || temperature > 2.0) {
-      temperature = 1.0;
-//      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Name cannot be longer than 255 characters"));
-      integrationConfiguration.setErrors(Arrays.asList("Name cannot be longer than 255 characters"));
+//      temperature = 1.0;
+      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be between 0 and 2."));
+//      integrationConfiguration.setErrors(Arrays.asList("Name cannot be longer than 255 characters"));
     }
     //    else { alert("Temperature must be between 0 and 2."); }
 
