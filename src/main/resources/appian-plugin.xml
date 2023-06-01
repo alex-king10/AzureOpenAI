@@ -1,22 +1,27 @@
-<appian-plugin name="Appian - Azure OpenAI" key="azure-openai-csp">
-<plugin-info>
-  <description>Appian Connected System - Azure OpenAI</description>
-  <vendor name="Appian" url="http://www.appian.com"/>
-  <version>1.0.0.0</version>
-  <application-version min="7.6.0.4"/>
-</plugin-info>
-<connected-system-template key="AzureOpenAICSP"
-                           name="AzureOpenAICSP"
-                           class="com.example.azureopenai.templates.AzureOpenAICSP">
-  <integration-template key="AzureChatCompletionIntegrationTemplate"
-                        name="AzureChatCompletionIntegrationTemplate"
-                        class="com.example.azureopenai.templates.AzureChatCompletionIntegrationTemplate" />
-  <integration-template key="AzureEmbeddingIntegrationTemplate"
-                        name="AzureEmbeddingIntegrationTemplate"
-                        class="com.example.azureopenai.templates.AzureEmbeddingIntegrationTemplate" />
-  <integration-template key="AzureCompletionIntegrationTemplate"
-                        name="AzureCompletionIntegrationTemplate"
-                        class="com.example.azureopenai.templates.AzureCompletionIntegrationTemplate" />
-
-</connected-system-template>
+<appian-plugin name="AzureOpenAI" key="azure-openai-csp">
+  <plugin-info>
+    <description>Azure OpenAI Connected System</description>
+    <vendor name="Appian" url="http://www.appian.com"/>
+    <version>1.0.0</version>
+    <application-version min="7.6.0.4"/>
+  </plugin-info>
+  <connected-system key="AzureOpenAICSP">
+    <version major-version="1">
+      <connected-system-template key="AzureOpenAICSP"
+                                 name="AzureOpenAICSP"
+                                 class="com.example.azureopenai.templates.AzureOpenAICSP"/>
+      <integration-template key="AzureChatCompletionIntegrationTemplate"
+                            name="AzureChatCompletionIntegrationTemplate"
+                            class="com.example.azureopenai.templates.AzureChatCompletionIntegrationTemplate"
+                            request-policy="read"/>
+      <integration-template key="AzureEmbeddingIntegrationTemplate"
+                            name="AzureEmbeddingIntegrationTemplate"
+                            class="com.example.azureopenai.templates.AzureEmbeddingIntegrationTemplate"
+                            request-policy="read"/>
+      <integration-template key="AzureCompletionIntegrationTemplate"
+                            name="AzureCompletionIntegrationTemplate"
+                            class="com.example.azureopenai.templates.AzureCompletionIntegrationTemplate"
+                            request-policy="read"/>
+    </version>
+  </connected-system>
 </appian-plugin>
