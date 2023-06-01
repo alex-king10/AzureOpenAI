@@ -14,10 +14,10 @@ import static std.ConstantKeys.USER;
 import static std.SharedMethods.getErrorDetails;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -73,8 +73,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
   }
   //      retrieve content from reply
   private static ArrayList<String> getResponseContent(String responseBody) {
-    String responseStr = responseBody;
-    JSONObject jsonResponse = new JSONObject(responseStr);
+    JSONObject jsonResponse = new JSONObject(responseBody);
     JSONArray choices = jsonResponse.getJSONArray("choices");
     ArrayList<String> contentArr = new ArrayList<>();
     String content = "";
@@ -224,9 +223,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
             .refresh(RefreshPolicy.ALWAYS)
             .build(),
-//TODO: change all these to double prop
-//        doubleProperty(TEMPERATURE).label("Temperature")
-        textProperty(TEMPERATURE).label("Temperature")
+        doubleProperty(TEMPERATURE).label("Temperature")
             .isRequired(false)
             .instructionText("Sampling temperature to use, between 0 and 2")
             .isExpressionable(true)
@@ -245,16 +242,16 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .isExpressionable(true)
             .instructionText("Maximum number of tokens to generate in the completion.")
             .placeholder("4096")
-            .description("The token count of your prompt plus max_tokens can't exceed the model's context length. Default of 4096.")
+            .description("Token count of your prompt plus max_tokens can't exceed the model's context length. Default of 4096.")
             .build(),
-        textProperty(PRESENCE_PENALTY).label("Presence Penalty")
+        doubleProperty(PRESENCE_PENALTY).label("Presence Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("0.0")
             .description("Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.")
             .instructionText("Number between -2.0 and 2.0.")
             .build(),
-        textProperty(FREQUENCY_PENALTY).label("Frequency Penalty")
+        doubleProperty(FREQUENCY_PENALTY).label("Frequency Penalty")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("0.0")
@@ -334,20 +331,9 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     inputMap.put("messages", messageString);
 
 //      temperature
-    Double temperature = 1.0;
-    String temperatureStr = integrationConfiguration.getValue(TEMPERATURE);
-    if (temperatureStr!=null) { temperature = Double.valueOf(temperatureStr);}
-    temperature = 10.0;
-    if (temperature < 0.0 || temperature > 2.0) {
-//      temperature = 1.0;
-      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be between 0 and 2."));
-//      integrationConfiguration.setErrors(Arrays.asList("Name cannot be longer than 255 characters"));
-    }
-    //    else { alert("Temperature must be between 0 and 2."); }
-
+    Double temperature =  integrationConfiguration.getValue(TEMPERATURE);
     inputMap.put("temperature", temperature);
     requestDiagnostic.put("Temperature", temperature);
-
 
 //      n
     Integer nInt = integrationConfiguration.getValue(N);
@@ -359,29 +345,26 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     Integer max_tokens = integrationConfiguration.getValue(MAX_TOKENS);
     if(max_tokens == null) max_tokens = 4096;
     inputMap.put("max_tokens", max_tokens);
-    requestDiagnostic.put("Maxiumum Number of Tokens", max_tokens);
+    requestDiagnostic.put("Maximum Number of Tokens", max_tokens);
 
 //    presence_penalty
-    String presencePen = integrationConfiguration.getValue(PRESENCE_PENALTY);
-    double presencePenNum = 0.0;
+//    String presencePen = integrationConfiguration.getValue(PRESENCE_PENALTY);
+    Double presencePenNum = integrationConfiguration.getValue(PRESENCE_PENALTY);
     //    if value was given convert to double
-    if(presencePen != null) presencePenNum = Double.valueOf(presencePen);
-    //    if value not between -2 and 2, set to default
-    if (presencePenNum > 2.0 || presencePenNum < -2.0) {
-      presencePenNum = 0.0;
-    }
+//    if(presencePen != null) presencePenNum = Double.valueOf(presencePen);
+
     inputMap.put("presence_penalty", presencePenNum);
     requestDiagnostic.put("Presence Penalty", presencePenNum);
 
 //    frequency_penalty
-    String frequencyPen = integrationConfiguration.getValue(FREQUENCY_PENALTY);
-    double freqPenNum= 0.0;
+//    String frequencyPen = integrationConfiguration.getValue(FREQUENCY_PENALTY);
+    Double freqPenNum= integrationConfiguration.getValue(FREQUENCY_PENALTY);
     //    if value was given convert to double
-    if(frequencyPen != null) freqPenNum = Double.valueOf(frequencyPen);
+//    if(frequencyPen != null) freqPenNum = Double.valueOf(frequencyPen);
     //    if value not between -2 and 2, set to default
-    if (freqPenNum > 2.0 || freqPenNum < -2.0) {
-      freqPenNum = 0.0;
-    }
+//    if (freqPenNum > 2.0 || freqPenNum < -2.0) {
+//      freqPenNum = 0.0;
+//    }
     inputMap.put("frequency_penalty", freqPenNum);
     requestDiagnostic.put("Frequency Penalty", freqPenNum);
 

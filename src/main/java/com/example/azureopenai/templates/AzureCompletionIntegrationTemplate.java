@@ -16,7 +16,6 @@ import static std.SharedMethods.getErrorDetails;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -239,11 +238,6 @@ private static String getChoices(String responseBody) {
             .instructionText("Prompt(s) to generate completions for, encoded as a list of strings. In the following format: \n" +
                 "{\n\t\"Once upon a time...\",\n\t\"In a land far away\"\n }")
             .build(),
-//        booleanProperty(GPT35TURBO).label("Model is GPT-35-Turbo?")
-//            .displayMode(BooleanDisplayMode.RADIO_BUTTON)
-//            .description("Using GPT-35-Turbo for your deployment model means there are some configuration options that will be unavailable such as logprobs, best_of, and echo.")
-//            .isExpressionable(true)
-//            .build(),
         booleanProperty(DEV_SETTINGS).label("Developer Settings")
             .displayMode(BooleanDisplayMode.CHECKBOX)
             .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
@@ -256,7 +250,7 @@ private static String getChoices(String responseBody) {
             .placeholder("16")
             .description("The token count of your prompt plus max_tokens can't exceed the model's context length. Default of 16.")
             .build(),
-        textProperty(TEMPERATURE).label("Temperature")
+        doubleProperty(TEMPERATURE).label("Temperature")
             .isRequired(false)
             .isExpressionable(true)
             .placeholder("1.0")
@@ -407,13 +401,13 @@ private static String getChoices(String responseBody) {
     requestDiagnostic.put("Max Tokens", max_tokens);
 
 //    temperature
-    String tempString = integrationConfiguration.getValue(TEMPERATURE);
-    Double temperature = 1.0;
-    if (tempString != null) { temperature = Double.valueOf(tempString); }
-    if (temperature < 0.0 || temperature > 2.0) {
-      temperature = 1.0;
-      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be a value between -2 and 0."));
-    }
+//    Double tempString = integrationConfiguration.getValue(TEMPERATURE);
+    Double temperature = integrationConfiguration.getValue(TEMPERATURE);
+//    if (tempString != null) { temperature = Double.valueOf(tempString); }
+//    if (temperature < 0.0 || temperature > 2.0) {
+//      temperature = 1.0;
+//      integrationConfiguration.setErrors(TEMPERATURE, Arrays.asList("Temperature must be a value between -2 and 0."));
+//    }
     inputMap.put(TEMPERATURE, temperature);
     requestDiagnostic.put("Temperature", temperature);
 
