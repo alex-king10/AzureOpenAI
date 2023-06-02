@@ -55,6 +55,8 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
   public static final String ECHO = "echo";
   public static final String BEST_OF = "best_of";
   static Map<String,Object> requestDiagnostic = new HashMap<>();
+  static Gson gson = new Gson();
+
 
 
   private static String completionAPICall(String apiKey, String endpoint, HashMap<String, Object> inputMap) {
@@ -69,7 +71,6 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
       }
     }
 
-    Gson gson = new Gson();
     String requestString = gson.toJson(requestMap);
 
 
@@ -79,28 +80,8 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
 
 //    TODO try converting with the JSON thing
 
-
-
-//    if (logprobs == null && bestOfNullInput == true && echo == false) {
-//      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
-//              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
-//              "\"frequency_penalty\": %f, \"temperature\": %f}",
-//          prompt, stop, max_tokens, top_p, logit_bias,
-//          user, n,presence_pen, freq_pen, temperature );
-//
-//    } else {
-//      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
-//              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
-//              "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
-//              "\"temperature\": %f}",
-//          prompt, stop, max_tokens, top_p, logit_bias,
-//          user, n,presence_pen, freq_pen, best_of, logprobs, echo, temperature );
-//    }
-
-
     MediaType mediaType = MediaType.parse("application/json");
 
-//    RequestBody body = RequestBody.create(mediaType, requestBody);
     RequestBody body = RequestBody.create(mediaType, requestString);
 
     Request request = new Request.Builder()
@@ -468,6 +449,7 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
     } finally {
 
       diagnosticResponse.put("Full Response", response);
+
 
       final long end = System.currentTimeMillis();
       final long executionTime = end - start;
