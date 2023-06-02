@@ -4,12 +4,9 @@ import static std.ConstantKeys.API_VERSION;
 import static std.ConstantKeys.DEPLOYMENT_ID;
 import static std.SharedMethods.getErrorDetails;
 
-import java.util.ArrayList;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.appian.connectedsystems.simplified.sdk.SimpleIntegrationTemplate;
 import com.appian.connectedsystems.simplified.sdk.configuration.SimpleConfiguration;
@@ -22,6 +19,8 @@ import com.appian.connectedsystems.templateframework.sdk.configuration.PropertyP
 import com.appian.connectedsystems.templateframework.sdk.diagnostics.IntegrationDesignerDiagnostic;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateRequestPolicy;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateType;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -32,13 +31,20 @@ import okhttp3.Response;
 @TemplateId(name="AzureEmbeddingIntegrationTemplate")
 @IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
 public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate {
-
+  static Map<String,Object> requestDiagnostic = new HashMap<>();
+  static Gson gson = new Gson();
   private static String embeddingsAPICall(String apiKey, String endpoint, HashMap<String, Object> inputMap)
       throws Exception {
     OkHttpClient client = new OkHttpClient();
+    HashMap<String, Object> requestMap = new HashMap<>();
 
-    String requestBody = String.format(
-        "{\"input\": \"%s\"}", inputMap.get("input"));
+    Object value = inputMap.get(INPUT);
+    if (value != null) {
+      requestMap.put(INPUT, value);
+      requestDiagnostic.put(INPUT, value);
+    }
+
+    String requestBody = gson.toJson(requestMap);
 
     MediaType mediaType = MediaType.parse("application/json");
 
@@ -68,19 +74,27 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
     return String.format("https://%s.openai.azure.com/openai/deployments/%s/embeddings?api-version=%s", resourceName, deploymentID, APIVersion);
   }
 
-  private ArrayList<String> getEmbeddingArray(String response) {
-    JSONObject jsonResponse = new JSONObject(response);
-    JSONArray data = jsonResponse.getJSONArray("data");
-    ArrayList<String> embedding = new ArrayList<>();
-    if (data.length() > 0) {
-      for (int i = 0; i < data.length(); i++) {
-        JSONObject dataObject = data.getJSONObject(i);
-        embedding.add(dataObject.get("embedding").toString());
+  private Map<String, Object> getEmbeddingArray(String response) {
+//    JSONObject jsonResponse = new JSONObject(response);
+//    JSONArray data = jsonResponse.getJSONArray("data");
+//    ArrayList<String> embedding = new ArrayList<>();
+////    JSONArray jsonArray = new JSONArray(data.getJSONObject(0).get("embedding").toString());
+//
+//
+//    if (data.length() > 0) {
+//      for (int i = 0; i < data.length(); i++) {
+//        JSONObject dataObject = data.getJSONObject(i);
+//        JSONArray jsonArray = new JSONArray(dataObject.get("embedding").toString());
+////        embedding.add(dataObject.get("embedding").toString());
+//      }
+//
+//    }
+//    return embedding;
+    Gson gson = new Gson();
+    Type type = new TypeToken<Map<String, Object>>(){}.getType();
 
-      }
-
-    }
-    return embedding;
+    Map<String, Object> myMap = gson.fromJson(response, type);
+    return myMap;
   }
   @Override
   protected SimpleConfiguration getConfiguration(
@@ -122,7 +136,6 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
       ExecutionContext executionContext) {
 //    1. set up step
 //    retrieve from CSP
-    Map<String,Object> requestDiagnostic = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(AzureOpenAICSP.API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(AzureOpenAICSP.YOUR_RESOURCE_NAME);
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
@@ -130,27 +143,30 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
     String endpoint = getFullEndpoint(resourceName, deploymentID, APIVersion);
     requestDiagnostic.put("Endpoint", endpoint);
 
-//    retrieve from integration
-    String input;
-    input = integrationConfiguration.getValue(INPUT);
-    requestDiagnostic.put("Input for embedding", input);
-
 
     Map<String,Object> resultMap = new HashMap<>();
     Map<String, Object> diagnosticResponse = new HashMap<>();
     IntegrationDesignerDiagnostic.IntegrationDesignerDiagnosticBuilder diagnosticBuilder = IntegrationDesignerDiagnostic
         .builder();
-//   2. make remote request
-    String response = "";
-    final long start = System.currentTimeMillis();
     HashMap<String, Object> inputMap = new HashMap<>();
-    inputMap.put("input", input);
+
+//   2. make remote request
+
+    //    retrieve from integration
+    String input;
+    input = integrationConfiguration.getValue(INPUT);
+    inputMap.put(INPUT, input);
+
+    String response = "";
+
+    final long start = System.currentTimeMillis();
     IntegrationError error = null;
     IntegrationDesignerDiagnostic diagnostic;
 
 
     try {
       response = embeddingsAPICall(apiKey, endpoint, inputMap);
+
       resultMap.put("Embeddings", getEmbeddingArray(response));
 
 
@@ -162,6 +178,7 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
           .detail(errorDetails[1])
           .build();
     } finally {
+
 
       diagnosticResponse.put("Full Response", response);
 

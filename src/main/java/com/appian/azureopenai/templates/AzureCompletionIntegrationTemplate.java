@@ -13,6 +13,7 @@ import static std.ConstantKeys.USER;
 import static std.SharedMethods.getErrorDetails;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +36,7 @@ import com.appian.connectedsystems.templateframework.sdk.diagnostics.Integration
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateRequestPolicy;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateType;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -111,20 +113,11 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
   }
 
   private static Map<String, Object> getFullResponseObject(String responseBody) {
-    JSONObject responseJSON = new JSONObject(responseBody);
-    Map<String, Object> contentMap = new HashMap<>();
-    if (responseJSON.length() > 0) {
-      for (int i = 0; i < responseJSON.length(); i++) {
-        contentMap.put("id",responseJSON.get("id"));
-        contentMap.put("object",responseJSON.get("object"));
-        contentMap.put("created",responseJSON.get("created"));
-        contentMap.put("model",responseJSON.get("model"));
-//        retrieve generated text
-        contentMap.put("Completions",getResponseContent(responseBody));
-      }
-    }
+    Type type = new TypeToken<Map<String, Object>>(){}.getType();
 
-    return contentMap;
+    Map<String, Object> myMap = gson.fromJson(responseBody, type);
+    myMap.put("Completions", getResponseContent(responseBody));
+    return myMap;
 
   }
 

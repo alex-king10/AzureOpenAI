@@ -11,6 +11,7 @@ import static std.ConstantKeys.TEMPERATURE;
 import static std.ConstantKeys.USER;
 import static std.SharedMethods.getErrorDetails;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ import com.appian.connectedsystems.templateframework.sdk.diagnostics.Integration
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateRequestPolicy;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateType;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -49,19 +51,11 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
   static Gson gson = new Gson();
 
   private static Map<String, Object> getFullResponseObject(String responseBody) {
-    JSONObject responseJSON = new JSONObject(responseBody);
-    Map<String, Object> contentMap = new HashMap<>();
-    if (responseJSON.length() > 0) {
-      for (int i = 0; i < responseJSON.length(); i++) {
-        contentMap.put("id",responseJSON.get("id"));
-        contentMap.put("object",responseJSON.get("object"));
-        contentMap.put("created",responseJSON.get("created"));
-        contentMap.put("model",responseJSON.get("model"));
-        contentMap.put("Chat Completions",getResponseContent(responseBody));
-      }
-    }
+    Type type = new TypeToken<Map<String, Object>>(){}.getType();
 
-    return contentMap;
+    Map<String, Object> myMap = gson.fromJson(responseBody, type);
+    myMap.put("Chat Completions", getResponseContent(responseBody));
+    return myMap;
 
   }
 
@@ -86,22 +80,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
   public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap) throws Exception {
     OkHttpClient client = new OkHttpClient();
-
-//    String prompt = (String)inputMap.get("messages");
-//    Double temperature = (Double)inputMap.get("temperature");
-//    Integer n = (Integer)inputMap.get("n");
-//    Integer max_tokens = (Integer)inputMap.get("max_tokens");
-//    Double presence_pen = (Double)inputMap.get("presence_penalty");
-//    Double frequency_pen = (Double)inputMap.get("frequency_penalty");
-//    String logit_bias = (String)inputMap.get("logit_bias");
-//    String user = (String)inputMap.get("user");
-//
-//    String requestBody = String.format(
-//        "{\"messages\": %s, \"temperature\": %f, \"n\": %d," +
-//          "\"max_tokens\": %d, \"presence_penalty\": %f, \"frequency_penalty\": %f," +
-//            "\"logit_bias\": %s, \"user\": \"%s\"}",
-//        prompt, temperature, n, max_tokens, presence_pen, frequency_pen,
-//        logit_bias, user);
     Map<String, Object> requestMap = new HashMap<>();
 
     for (String config: inputMap.keySet()) {
@@ -113,7 +91,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     }
 
     String requestBody = gson.toJson(requestMap);
-
 
     MediaType mediaType = MediaType.parse("application/json");
 
@@ -284,7 +261,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
       ExecutionContext executionContext) {
 //    1. set up step
 //      retrieve data from CSP
-    Map<String,Object> requestDiagnostic = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(AzureOpenAICSP.API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(AzureOpenAICSP.YOUR_RESOURCE_NAME);
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
@@ -300,44 +276,21 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 //      messages
     String role;
     String content;
-    String messageString = "[";
-    String itemString;
 
-//    try {
-////      retrieve list property object
-//      messages = integrationConfiguration.getValue(MESSAGE);
-////      retrieve list item data (local type) --> Map<String, Object>
-//      for (int i = 0; i < messages.size(); i++) {
-//        role = (String)((PropertyState)((Map<String, Object>)((PropertyState)messages.get(i)).getValue()).get("role")).getValue();
-//        content = (String)((PropertyState)((Map<String, Object>)((PropertyState)messages.get(i)).getValue()).get("content")).getValue();
-////TODO change this
-//        itemString = String.format("{\"role\": \"%s\", \"content\": \"%s\"}", role, content);
-////        itemString = String.format("{role: %s, content: %s}", role, content);
-//        messageString += itemString;
-//
-//        if (i < messages.size() - 1) { messageString += ","; }
-//        else { messageString += "]"; }
-//
-//      }
-//
-//    } catch (Exception e) {
-//      System.out.println(e.getMessage());
-//    }
     List<Object> messages = integrationConfiguration.getValue(MESSAGE);
     ArrayList<Map<String, String>> messageList = new ArrayList<>();
-    HashMap<String, String> messageMap = new HashMap<>();
+    HashMap<String, String> messageMap;
     for (int i = 0; i < messages.size(); i++) {
+      messageMap = new HashMap<>();
       role = (String)((PropertyState)((Map<String, Object>)((PropertyState)messages.get(i)).getValue()).get("role")).getValue();
       content = (String)((PropertyState)((Map<String, Object>)((PropertyState)messages.get(i)).getValue()).get("content")).getValue();
       messageMap.put("role", role);
       messageMap.put("content", content);
       messageList.add(messageMap);
-      messageMap.clear();
     }
 
-//    requestDiagnostic.put("Message Input", messageString);
+
     inputMap.put("messages", messageList);
-//    inputMap.put("messages", messageString);
 
 //      temperature
     Double temperature =  integrationConfiguration.getValue(TEMPERATURE);
@@ -353,11 +306,9 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
 //    presence_penalty
     Double presencePenNum = integrationConfiguration.getValue(PRESENCE_PENALTY);
-//    throws error if presencePenNum is null, default is 0.0
     inputMap.put("presence_penalty", presencePenNum);
 
 //    frequency_penalty
-
     Double freqPenNum= integrationConfiguration.getValue(FREQUENCY_PENALTY);
     inputMap.put("frequency_penalty", freqPenNum);
 
@@ -396,8 +347,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
               .build();
 
     } finally {
-
-      diagnosticResponse.put("Full Response", response);
 
       //    3. translate resultMap from integration into appian values
 
