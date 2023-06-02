@@ -1,4 +1,4 @@
-version '1.0'
+version '1.0.0'
 
 apply plugin: 'java'
 
@@ -11,8 +11,19 @@ dependencies {
   implementation 'com.appian:connected-systems-client:1.1.0'
   testImplementation 'com.appian:connected-systems-core:1.2.0'
   implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.11'
-  implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
   implementation 'org.json:json:20230227'
+  testImplementation 'junit:junit:4.13.2'
+  testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.9.2'
+  implementation 'com.google.guava:guava:32.0.0-jre'
+  // https://mvnrepository.com/artifact/com.google.code.gson/gson
+  implementation 'com.google.code.gson:gson:2.10.1'
+
+
+
+}
+
+test {
+  useJUnitPlatform()
 }
 
 jar {

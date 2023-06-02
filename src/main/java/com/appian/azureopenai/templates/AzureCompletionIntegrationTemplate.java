@@ -34,6 +34,7 @@ import com.appian.connectedsystems.templateframework.sdk.configuration.SystemTyp
 import com.appian.connectedsystems.templateframework.sdk.diagnostics.IntegrationDesignerDiagnostic;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateRequestPolicy;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateType;
+import com.google.gson.Gson;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -53,53 +54,54 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
   public static final String SUFFIX = "suffix";
   public static final String ECHO = "echo";
   public static final String BEST_OF = "best_of";
+  static Map<String,Object> requestDiagnostic = new HashMap<>();
 
 
   private static String completionAPICall(String apiKey, String endpoint, HashMap<String, Object> inputMap) {
 
-    String prompt = (inputMap.get(PROMPT).toString());
-    int max_tokens = (Integer)inputMap.get(MAX_TOKENS);
-    Double temperature = (Double)inputMap.get(TEMPERATURE);
-    Double top_p = (Double)inputMap.get(TOP_P);
+    Map<String, Object> requestMap = new HashMap<>();
 
-    String stop;
-    if (inputMap.get(STOP) != null) {stop = (inputMap.get(STOP).toString());}
-    else { stop = null; }
-    String logit_bias = (String)inputMap.get(LOGIT_BIAS);
-    String user = (String)inputMap.get(USER);
-    int n = (Integer)inputMap.get(N);
-    Double presence_pen = (Double)inputMap.get(PRESENCE_PENALTY);
-    Double freq_pen = (Double)inputMap.get(FREQUENCY_PENALTY);
-    Integer best_of = (Integer)inputMap.get(BEST_OF);
-    Integer logprobs = (Integer)inputMap.get(LOGPROBS);
-    Boolean echo = (Boolean)inputMap.get(ECHO);
+    for (String config: inputMap.keySet()) {
+      Object value = inputMap.get(config);
+      if (value != null) {
+        requestMap.put(config, value);
+        requestDiagnostic.put(config, value);
+      }
+    }
 
+    Gson gson = new Gson();
+    String requestString = gson.toJson(requestMap);
 
 
 
     OkHttpClient client = new OkHttpClient();
     String requestBody;
 
-    if (logprobs == null && best_of == null && echo == false) {
-      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
-              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
-              "\"frequency_penalty\": %f, \"temperature\": %f}",
-          prompt, stop, max_tokens, top_p, logit_bias,
-          user, n,presence_pen, freq_pen, temperature );
+//    TODO try converting with the JSON thing
 
-    } else {
-      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
-              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
-              "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
-              "\"temperature\": %f}",
-          prompt, stop, max_tokens, top_p, logit_bias,
-          user, n,presence_pen, freq_pen, best_of, logprobs, echo, temperature );
-    }
+
+
+//    if (logprobs == null && bestOfNullInput == true && echo == false) {
+//      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
+//              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
+//              "\"frequency_penalty\": %f, \"temperature\": %f}",
+//          prompt, stop, max_tokens, top_p, logit_bias,
+//          user, n,presence_pen, freq_pen, temperature );
+//
+//    } else {
+//      requestBody = String.format("{\"prompt\": %s, \"stop\": %s, \"max_tokens\":%d, \"top_p\": %f," +
+//              "\"logit_bias\": %s, \"user\": \"%s\", \"n\": %d, \"presence_penalty\": %f," +
+//              "\"frequency_penalty\": %f, \"best_of\": %d, \"logprobs\": %d, \"echo\": %s," +
+//              "\"temperature\": %f}",
+//          prompt, stop, max_tokens, top_p, logit_bias,
+//          user, n,presence_pen, freq_pen, best_of, logprobs, echo, temperature );
+//    }
 
 
     MediaType mediaType = MediaType.parse("application/json");
 
-    RequestBody body = RequestBody.create(mediaType, requestBody);
+//    RequestBody body = RequestBody.create(mediaType, requestBody);
+    RequestBody body = RequestBody.create(mediaType, requestString);
 
     Request request = new Request.Builder()
         .url(endpoint)
@@ -332,7 +334,6 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
       ExecutionContext executionContext) {
     //    1. set up step
   //    retrieve from CSP
-    Map<String,Object> requestDiagnostic = new HashMap<>();
     String apiKey = connectedSystemConfiguration.getValue(AzureOpenAICSP.API_KEY);
     String resourceName = connectedSystemConfiguration.getValue(AzureOpenAICSP.YOUR_RESOURCE_NAME);
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
@@ -345,13 +346,16 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
     HashMap<String, Object> inputMap = new HashMap<>();
 
 //    prompt
+//    TODO change this?
     ArrayList<Object> prompt = integrationConfiguration.getValue(PROMPT);
     String formattedStr;
+    String value;
 
     if (prompt != null) {
       for (int i = 0; i < prompt.size(); i++) {
-        formattedStr = String.format("\"%s\"", (((PropertyState)prompt.get(i)).getValue()));
-        prompt.set(i, formattedStr);
+        value = (String)((PropertyState)prompt.get(i)).getValue();
+//        formattedStr = String.format("\"%s\"", (((PropertyState)prompt.get(i)).getValue()));
+        prompt.set(i, value);
       }
     } else {
       prompt = new ArrayList<>();
@@ -362,86 +366,82 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
     inputMap.put(PROMPT, prompt);
 
 //    stop
+//    TODO change this too?
     ArrayList<Object> stopArr = integrationConfiguration.getValue(STOP);
     String stopString;
     if (stopArr != null) {
       for (int i = 0; i < stopArr.size(); i++) {
-        stopString = String.format("\"%s\"", (((PropertyState)stopArr.get(i)).getValue()));
+//        stopString = String.format("\"%s\"", (((PropertyState)stopArr.get(i)).getValue()));
+        stopString = (String)((PropertyState)prompt.get(i)).getValue();
         stopArr.set(i, stopString);
       }
     }
 
     inputMap.put(STOP, stopArr);
-    requestDiagnostic.put("Stop", stopArr);
+//    requestDiagnostic.put("Stop", stopArr);
 
 //    max_tokens
     Integer max_tokens = integrationConfiguration.getValue(MAX_TOKENS);
-    if(max_tokens == null) max_tokens = 16;
-    if (max_tokens < 4096) inputMap.put(MAX_TOKENS, max_tokens);
-    requestDiagnostic.put("Max Tokens", max_tokens);
+    inputMap.put(MAX_TOKENS, max_tokens);
+//    requestDiagnostic.put("Max Tokens", max_tokens);
 
 //    temperature
     Double temperature = integrationConfiguration.getValue(TEMPERATURE);
     inputMap.put(TEMPERATURE, temperature);
-    requestDiagnostic.put("Temperature", temperature);
+//    requestDiagnostic.put("Temperature", temperature);
 
 // top p
     Double top_p = integrationConfiguration.getValue(TOP_P);
     inputMap.put(TOP_P, top_p);
-    requestDiagnostic.put("Top P", top_p);
+//    requestDiagnostic.put("Top P", top_p);
 
 //    logit bias
     String logitBias = integrationConfiguration.getValue(LOGIT_BIAS);
-//    default of logit bias is {}, errors if left as null
-    if (logitBias == null) logitBias = new JSONObject().toString();
     inputMap.put(LOGIT_BIAS, logitBias);
-    requestDiagnostic.put("Logit Bias", logitBias);
+//    requestDiagnostic.put("Logit Bias", logitBias);
 
 //    user
     String user = integrationConfiguration.getValue(USER);
-    if (user == null) user = "";
     inputMap.put(USER, user);
-    requestDiagnostic.put("user", user);
+//    requestDiagnostic.put("user", user);
 
     //      n
     Integer nInt = integrationConfiguration.getValue(N);
-    if(nInt == null) nInt = 1;
     inputMap.put(N, nInt);
-    requestDiagnostic.put("N", nInt);
+//    requestDiagnostic.put("N", nInt);
 
 //    log probs
     Integer logProbs = integrationConfiguration.getValue(LOGPROBS);
     inputMap.put(LOGPROBS, logProbs);
-    requestDiagnostic.put("Log Probs", logProbs);
+//    requestDiagnostic.put("Log Probs", logProbs);
 
 //    suffix
     String suffix = integrationConfiguration.getValue(SUFFIX);
     inputMap.put(SUFFIX, suffix);
-    requestDiagnostic.put("Suffix", suffix);
+//    requestDiagnostic.put("Suffix", suffix);
 
 //    Echo
     Boolean echo = integrationConfiguration.getValue(ECHO);
+    if (echo == false) {
+      echo = null;
+    }
     inputMap.put(ECHO, echo);
-    requestDiagnostic.put("Echo", echo);
+//    requestDiagnostic.put("Echo", echo);
 
 //    presence_penalty
     Double presencePenNum = integrationConfiguration.getValue(PRESENCE_PENALTY);
-    //  throws error if left as null, default of 0.0
-    if (presencePenNum == null) presencePenNum = 0.0;
     inputMap.put(PRESENCE_PENALTY, presencePenNum);
-    requestDiagnostic.put("Presence Penalty", presencePenNum);
+//    requestDiagnostic.put("Presence Penalty", presencePenNum);
 
 //    frequency_penalty
     Double freqPenNum= integrationConfiguration.getValue(FREQUENCY_PENALTY);
-    //    throws error if left as null, default of 0.0
-    if (freqPenNum == null) freqPenNum = 0.0;
     inputMap.put(FREQUENCY_PENALTY, freqPenNum);
-    requestDiagnostic.put("Frequency Penalty", freqPenNum);
+//    requestDiagnostic.put("Frequency Penalty", freqPenNum);
 
 //    best_of
     Integer best_of = integrationConfiguration.getValue(BEST_OF);
     inputMap.put(BEST_OF, best_of);
-    requestDiagnostic.put("Best of", best_of);
+//    requestDiagnostic.put("Best of", best_of);
 
     Map<String, Object> resultMap = new HashMap<>();
     Map<String, Object> diagnosticResponse = new HashMap<>();

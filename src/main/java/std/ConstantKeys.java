@@ -23,7 +23,5 @@ public interface ConstantKeys {
   public static final String FREQUENCY_PENALTY = "frequency_penalty";
   public static final String STOP = "stop";
 
-//  Reused properties
-//  TextPropertyDescriptor userProperties = TextPropertyDescriptor.builder();
 
 }
