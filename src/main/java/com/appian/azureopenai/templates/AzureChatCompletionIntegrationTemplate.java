@@ -11,6 +11,7 @@ import static std.ConstantKeys.TEMPERATURE;
 import static std.ConstantKeys.USER;
 import static std.SharedMethods.getErrorDetails;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +79,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     return contentArr;
   }
 
-  public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap) throws Exception {
+  public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap) {
     OkHttpClient client = new OkHttpClient();
     Map<String, Object> requestMap = new HashMap<>();
 
@@ -104,11 +105,11 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .addHeader("Content-Type","application/json")
         .build();
 
-    Response response;
-    response = client.newCall(request).execute();
-    responseBody = response.body().string();
-    
-    response.close();
+    try (Response response = client.newCall(request).execute() ) {
+      responseBody = response.body().string();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     return responseBody;
 
   }

@@ -80,8 +80,6 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
     OkHttpClient client = new OkHttpClient();
     String requestBody;
 
-//    TODO try converting with the JSON thing
-
     MediaType mediaType = MediaType.parse("application/json");
 
     RequestBody body = RequestBody.create(mediaType, requestString);
@@ -93,16 +91,12 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
         .addHeader("Content-Type","application/json")
         .build();
 
-    Response response;
     String responseBody;
-    try {
-      response = client.newCall(request).execute();
+    try (Response response = client.newCall(request).execute() ) {
       responseBody = response.body().string();
-
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    response.close();
 
     return responseBody;
   }
@@ -145,7 +139,6 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
       ExecutionContext executionContext) {
 
     Boolean devSettingState = integrationConfiguration.getValue(DEV_SETTINGS);
-    System.out.println(devSettingState);
 
     if (devSettingState == null || !devSettingState) {
       return integrationConfiguration.setProperties(
@@ -320,15 +313,12 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
     HashMap<String, Object> inputMap = new HashMap<>();
 
 //    prompt
-//    TODO change this?
     ArrayList<Object> prompt = integrationConfiguration.getValue(PROMPT);
-    String formattedStr;
     String value;
 
     if (prompt != null) {
       for (int i = 0; i < prompt.size(); i++) {
         value = (String)((PropertyState)prompt.get(i)).getValue();
-//        formattedStr = String.format("\"%s\"", (((PropertyState)prompt.get(i)).getValue()));
         prompt.set(i, value);
       }
     } else {
@@ -345,54 +335,44 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
     String stopString;
     if (stopArr != null) {
       for (int i = 0; i < stopArr.size(); i++) {
-//        stopString = String.format("\"%s\"", (((PropertyState)stopArr.get(i)).getValue()));
         stopString = (String)((PropertyState)prompt.get(i)).getValue();
         stopArr.set(i, stopString);
       }
     }
 
     inputMap.put(STOP, stopArr);
-//    requestDiagnostic.put("Stop", stopArr);
 
 //    max_tokens
     Integer max_tokens = integrationConfiguration.getValue(MAX_TOKENS);
     inputMap.put(MAX_TOKENS, max_tokens);
-//    requestDiagnostic.put("Max Tokens", max_tokens);
 
 //    temperature
     Double temperature = integrationConfiguration.getValue(TEMPERATURE);
     inputMap.put(TEMPERATURE, temperature);
-//    requestDiagnostic.put("Temperature", temperature);
 
 // top p
     Double top_p = integrationConfiguration.getValue(TOP_P);
     inputMap.put(TOP_P, top_p);
-//    requestDiagnostic.put("Top P", top_p);
 
 //    logit bias
     String logitBias = integrationConfiguration.getValue(LOGIT_BIAS);
     inputMap.put(LOGIT_BIAS, logitBias);
-//    requestDiagnostic.put("Logit Bias", logitBias);
 
 //    user
     String user = integrationConfiguration.getValue(USER);
     inputMap.put(USER, user);
-//    requestDiagnostic.put("user", user);
 
     //      n
     Integer nInt = integrationConfiguration.getValue(N);
     inputMap.put(N, nInt);
-//    requestDiagnostic.put("N", nInt);
 
 //    log probs
     Integer logProbs = integrationConfiguration.getValue(LOGPROBS);
     inputMap.put(LOGPROBS, logProbs);
-//    requestDiagnostic.put("Log Probs", logProbs);
 
 //    suffix
     String suffix = integrationConfiguration.getValue(SUFFIX);
     inputMap.put(SUFFIX, suffix);
-//    requestDiagnostic.put("Suffix", suffix);
 
 //    Echo
     Boolean echo = integrationConfiguration.getValue(ECHO);
@@ -400,22 +380,18 @@ public class AzureCompletionIntegrationTemplate extends SimpleIntegrationTemplat
       echo = null;
     }
     inputMap.put(ECHO, echo);
-//    requestDiagnostic.put("Echo", echo);
 
 //    presence_penalty
     Double presencePenNum = integrationConfiguration.getValue(PRESENCE_PENALTY);
     inputMap.put(PRESENCE_PENALTY, presencePenNum);
-//    requestDiagnostic.put("Presence Penalty", presencePenNum);
 
 //    frequency_penalty
     Double freqPenNum= integrationConfiguration.getValue(FREQUENCY_PENALTY);
     inputMap.put(FREQUENCY_PENALTY, freqPenNum);
-//    requestDiagnostic.put("Frequency Penalty", freqPenNum);
 
 //    best_of
     Integer best_of = integrationConfiguration.getValue(BEST_OF);
     inputMap.put(BEST_OF, best_of);
-//    requestDiagnostic.put("Best of", best_of);
 
     Map<String, Object> resultMap = new HashMap<>();
     Map<String, Object> diagnosticResponse = new HashMap<>();
