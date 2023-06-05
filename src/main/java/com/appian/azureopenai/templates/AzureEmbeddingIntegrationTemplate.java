@@ -4,6 +4,7 @@ import static std.ConstantKeys.API_VERSION;
 import static std.ConstantKeys.DEPLOYMENT_ID;
 import static std.SharedMethods.getErrorDetails;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,8 +34,7 @@ import okhttp3.Response;
 public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate {
   static Map<String,Object> requestDiagnostic = new HashMap<>();
   static Gson gson = new Gson();
-  private static String embeddingsAPICall(String apiKey, String endpoint, HashMap<String, Object> inputMap)
-      throws Exception {
+  private static String embeddingsAPICall(String apiKey, String endpoint, HashMap<String, Object> inputMap) {
     OkHttpClient client = new OkHttpClient();
     HashMap<String, Object> requestMap = new HashMap<>();
 
@@ -57,13 +57,13 @@ public class AzureEmbeddingIntegrationTemplate extends SimpleIntegrationTemplate
         .addHeader("Content-Type","application/json")
         .build();
 
-    Response response;
     String responseBody;
+    try (Response response = client.newCall(request).execute() ) {
+      responseBody = response.body().string();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
-    response = client.newCall(request).execute();
-    responseBody = response.body().string();
-
-    response.close();
     return responseBody;
 
 
