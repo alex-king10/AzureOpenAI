@@ -9,7 +9,6 @@ import static std.ConstantKeys.N;
 import static std.ConstantKeys.PRESENCE_PENALTY;
 import static std.ConstantKeys.TEMPERATURE;
 import static std.ConstantKeys.USER;
-import static std.SharedMethods.getErrorDetails;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -65,6 +64,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
   }
   //      retrieve content from reply
   private static ArrayList<String> getResponseContent(String responseBody) {
+//    handle JSON error here
     JSONObject jsonResponse = new JSONObject(responseBody);
     JSONArray choices = jsonResponse.getJSONArray("choices");
     ArrayList<String> contentArr = new ArrayList<>();
@@ -108,7 +108,8 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     try (Response response = client.newCall(request).execute() ) {
       responseBody = response.body().string();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      return e.toString();
+//      throw new RuntimeException(e);
     }
     return responseBody;
 
@@ -334,29 +335,28 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     final IntegrationDesignerDiagnostic diagnostic;
 
     try {
-//      type Response
+//      type String
       response = chatCompletionCall(apiKey, endpoint, inputMap);
       resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
 
-      String[] errorDetails = getErrorDetails(response);
       error = IntegrationError.builder()
-              .title("Error Title: " + errorDetails[0])
-              .message("While calling the Chat Completion endpoint, an error occurred. Please check your Deployment ID and API Version.\n")
-              .detail(errorDetails[1])
+              .title("Error Title: " + response)
+              .message("While calling the Chat Completion endpoint, an error occurred. Please check your inputs and ensure your number of tokens has not exceeded the limit set by Azure OpenAI.\n")
+              .detail(response)
               .build();
 
     } finally {
 
       //    3. translate resultMap from integration into appian values
-
       final long end = System.currentTimeMillis();
       final long executionTime = end - start;
 
        diagnostic = diagnosticBuilder
           .addExecutionTimeDiagnostic(executionTime)
           .addRequestDiagnostic(requestDiagnostic)
+          .addResponseDiagnostic(diagnosticResponse)
           .addResponseDiagnostic(diagnosticResponse)
           .build();
 
