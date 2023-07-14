@@ -19,18 +19,19 @@ public class AzureOpenAICSP extends SimpleConnectedSystemTemplate {
     return simpleConfiguration.setProperties(
         textProperty(YOUR_RESOURCE_NAME)
             .label("Your Resource Name")
-            .instructionText("The name of your Azure OpenAI Resource.")
+            .instructionText("The name of your Azure OpenAI Resource")
             .isRequired(true)
+            .placeholder("Resource Name")
             .isImportCustomizable(true)
             .build(),
         textProperty(API_KEY)
             .label("API Key")
-            .instructionText("Enter your Azure OpenAI API Key.")
+            .instructionText("Enter your Azure OpenAI API Key")
+            .placeholder("API Key")
             .masked(true)
             .isRequired(true)
             .isImportCustomizable(true)
             .build()
-
 
     );
   }
