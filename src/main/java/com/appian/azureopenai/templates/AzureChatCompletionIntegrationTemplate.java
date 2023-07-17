@@ -9,8 +9,9 @@ import static std.ConstantKeys.N;
 import static std.ConstantKeys.PRESENCE_PENALTY;
 import static std.ConstantKeys.TEMPERATURE;
 import static std.ConstantKeys.USER;
+import static std.SharedMethods.getErrorDetails;
 
-import java.io.IOException;
+//import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,7 +80,8 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     return contentArr;
   }
 
-  public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap) {
+  public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap)
+      throws Exception {
     OkHttpClient client = new OkHttpClient();
     Map<String, Object> requestMap = new HashMap<>();
 
@@ -104,13 +106,23 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .addHeader("api-key", apiKey)
         .addHeader("Content-Type","application/json")
         .build();
+//    Response response = null;
 
-    try (Response response = client.newCall(request).execute() ) {
+//    try {
+      try (Response response = client.newCall(request).execute() ) {
+//      response = client.newCall(request).execute();
       responseBody = response.body().string();
-    } catch (IOException e) {
-      return e.toString();
-//      throw new RuntimeException(e);
+//      } catch (IOException e) {
+//        testing catching and throwing bad input errors
+      } catch (Exception e) {
+//      response.close();
+//      return e.toString();
+        throw new Exception(e);
     }
+//      finally {
+//      if (response != null)
+//        response.close();
+//    }
     return responseBody;
 
   }
@@ -340,12 +352,25 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
       resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
+//      e.cause.detailMessage: "timeout"
+//      e.cause.cause: "java.net. ..."
+      if (response.equals("")) {
+        response = String.valueOf(e.getCause());
+        error = IntegrationError.builder()
+            .title("Error Title: " + response)
+            .message("While calling the Chat Completion endpoint, an error occurred. Please check your inputs and ensure your number of tokens has not exceeded the limit set by Azure OpenAI.\n")
+            .detail(response)
+            .build();
+      } else {
+        String[] errorDetails = getErrorDetails(response);
+        error = IntegrationError.builder()
+            .title("Error Title: " + errorDetails[0])
+            .message("While calling the Chat Completion endpoint, an error occurred. Please check your Deployment ID and API Version. The following message was returned from the API request:\n")
+            .detail(errorDetails[1])
+            .build();
+      }
 
-      error = IntegrationError.builder()
-              .title("Error Title: " + response)
-              .message("While calling the Chat Completion endpoint, an error occurred. Please check your inputs and ensure your number of tokens has not exceeded the limit set by Azure OpenAI.\n")
-              .detail(response)
-              .build();
+
 
     } finally {
 

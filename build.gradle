@@ -11,7 +11,7 @@ dependencies {
   implementation 'com.appian:connected-systems-client:1.1.0'
   testImplementation 'com.appian:connected-systems-core:1.2.0'
   implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.11'
-  implementation 'org.json:json:20230227'
+  implementation 'org.json:json:20230618'
   testImplementation 'junit:junit:4.13.2'
   testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.9.2'
   implementation 'com.google.guava:guava:32.0.0-jre'
