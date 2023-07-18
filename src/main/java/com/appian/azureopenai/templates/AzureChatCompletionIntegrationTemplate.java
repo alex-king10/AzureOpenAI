@@ -8,6 +8,7 @@ import static std.ConstantKeys.MAX_TOKENS;
 import static std.ConstantKeys.N;
 import static std.ConstantKeys.PRESENCE_PENALTY;
 import static std.ConstantKeys.TEMPERATURE;
+import static std.ConstantKeys.TIMEOUT;
 import static std.ConstantKeys.USER;
 import static std.SharedMethods.getErrorDetails;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -50,6 +52,29 @@ import okhttp3.Response;
 public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTemplate {
   static Map<String,Object> requestDiagnostic = new HashMap<>();
   static Gson gson = new Gson();
+//  TODO make this available to chat completion call without being static (maybe just add as param when calling Chat Completion)
+//  static Integer timeout = 10;
+
+//creates custom OKHttpClient to make API call
+//  can customize timeout
+  private static OkHttpClient customHttpClient(int timeout) {
+//    check if timeout is within bounds
+//    TODO make dynamic timeout
+    OkHttpClient.Builder builder = new OkHttpClient.Builder();
+
+    // Set connection timeout
+    builder.connectTimeout(timeout, TimeUnit.SECONDS); // 10 seconds
+
+    // Set read timeout
+    builder.readTimeout(30, TimeUnit.SECONDS); // 30 seconds
+
+    // Set write timeout
+    builder.writeTimeout(30, TimeUnit.SECONDS); // 30 seconds
+
+//    OkHttpClient client = builder.build();
+    return builder.build();
+//    return client;
+  }
 
   private static Map<String, Object> getFullResponseObject(String responseBody) {
     Type type = new TypeToken<Map<String, Object>>(){}.getType();
@@ -80,9 +105,10 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     return contentArr;
   }
 
-  public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap)
+  public static String chatCompletionCall(String apiKey, String endpoint, Map<String, Object> inputMap, int timeout)
       throws Exception {
-    OkHttpClient client = new OkHttpClient();
+//    int timeoutLocal = timeout;
+    OkHttpClient client = customHttpClient(timeout);
     Map<String, Object> requestMap = new HashMap<>();
 
     for (String config: inputMap.keySet()) {
@@ -263,6 +289,13 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .placeholder("firstName.lastName")
             .description("A unique identifier representing your end-user, which can help Azure OpenAI to monitor and detect abuse.")
             .instructionText("Enter a username as a unique identifier")
+            .build(),
+        integerProperty(TIMEOUT).label("Timeout")
+            .isRequired(false)
+            .isExpressionable(true)
+            .instructionText("Number of seconds before a timeout error occurs when making a request to the API.")
+            .placeholder("10")
+            .description("Integer value for the number of seconds you would like to wait after making a request to Azure's Chat Completion endpoint before exiting. Maximum is 90 seconds and default is 10.")
             .build()
     );
   }
@@ -334,6 +367,13 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     String user = integrationConfiguration.getValue(USER);
     inputMap.put("user", user);
 
+//    timeout
+    int timeout = integrationConfiguration.getValue(TIMEOUT);
+    if (timeout == -1) {
+      timeout = 10;
+    }
+//    inputMap.put(TIMEOUT, timeout);
+
 
     Map<String,Object> resultMap = new HashMap<>();
     Map<String, Object> diagnosticResponse = new HashMap<>();
@@ -348,7 +388,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
     try {
 //      type String
-      response = chatCompletionCall(apiKey, endpoint, inputMap);
+      response = chatCompletionCall(apiKey, endpoint, inputMap, timeout);
       resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
@@ -382,7 +422,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
           .addExecutionTimeDiagnostic(executionTime)
           .addRequestDiagnostic(requestDiagnostic)
           .addResponseDiagnostic(diagnosticResponse)
-          .addResponseDiagnostic(diagnosticResponse)
+//          .addResponseDiagnostic(diagnosticResponse)
           .build();
 
     }

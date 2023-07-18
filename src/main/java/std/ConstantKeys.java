@@ -22,6 +22,7 @@ public interface ConstantKeys {
   public static final String PRESENCE_PENALTY = "presence_penalty";
   public static final String FREQUENCY_PENALTY = "frequency_penalty";
   public static final String STOP = "stop";
+  public static final String TIMEOUT = "timeout";
 
 
 }
