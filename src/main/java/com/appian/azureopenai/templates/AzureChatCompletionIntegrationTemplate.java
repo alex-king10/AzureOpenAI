@@ -52,21 +52,18 @@ import okhttp3.Response;
 public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTemplate {
   static Map<String,Object> requestDiagnostic = new HashMap<>();
   static Gson gson = new Gson();
-//  TODO make this available to chat completion call without being static (maybe just add as param when calling Chat Completion)
-//  static Integer timeout = 10;
+
 
 //creates custom OKHttpClient to make API call
 //  can customize timeout
   private static OkHttpClient customHttpClient(int timeout) {
-//    check if timeout is within bounds
-//    TODO make dynamic timeout
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
 
     // Set connection timeout
-    builder.connectTimeout(timeout, TimeUnit.SECONDS); // 10 seconds
+    builder.connectTimeout(10, TimeUnit.SECONDS); // 10 seconds
 
     // Set read timeout
-    builder.readTimeout(30, TimeUnit.SECONDS); // 30 seconds
+    builder.readTimeout(timeout, TimeUnit.SECONDS); // 30 seconds
 
     // Set write timeout
     builder.writeTimeout(30, TimeUnit.SECONDS); // 30 seconds
@@ -132,23 +129,12 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         .addHeader("api-key", apiKey)
         .addHeader("Content-Type","application/json")
         .build();
-//    Response response = null;
 
-//    try {
       try (Response response = client.newCall(request).execute() ) {
-//      response = client.newCall(request).execute();
-      responseBody = response.body().string();
-//      } catch (IOException e) {
-//        testing catching and throwing bad input errors
+        responseBody = response.body().string();
       } catch (Exception e) {
-//      response.close();
-//      return e.toString();
         throw new Exception(e);
     }
-//      finally {
-//      if (response != null)
-//        response.close();
-//    }
     return responseBody;
 
   }
@@ -294,8 +280,8 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
             .isRequired(false)
             .isExpressionable(true)
             .instructionText("Number of seconds before a timeout error occurs when making a request to the API.")
-            .placeholder("10")
-            .description("Integer value for the number of seconds you would like to wait after making a request to Azure's Chat Completion endpoint before exiting. Maximum is 90 seconds and default is 10.")
+            .placeholder("30")
+            .description("Integer value for the number of seconds you would like to wait after making a request to Azure's Chat Completion endpoint before exiting. Azure sometimes can take a while to generate a response. Default is 30 seconds.")
             .build()
     );
   }
@@ -368,11 +354,12 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     inputMap.put("user", user);
 
 //    timeout
-    int timeout = integrationConfiguration.getValue(TIMEOUT);
-    if (timeout == -1) {
-      timeout = 10;
+    Integer timeout = integrationConfiguration.getValue(TIMEOUT);
+    if (timeout == null) {
+      timeout = 30;
+    } else {
+      requestDiagnostic.put(TIMEOUT, timeout);
     }
-//    inputMap.put(TIMEOUT, timeout);
 
 
     Map<String,Object> resultMap = new HashMap<>();
@@ -392,20 +379,18 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
       resultMap.put("Response", getFullResponseObject(response));
 
     } catch (Exception e) {
-//      e.cause.detailMessage: "timeout"
-//      e.cause.cause: "java.net. ..."
       if (response.equals("")) {
         response = String.valueOf(e.getCause());
         error = IntegrationError.builder()
             .title("Error Title: " + response)
-            .message("While calling the Chat Completion endpoint, an error occurred. Please check your inputs and ensure your number of tokens has not exceeded the limit set by Azure OpenAI.\n")
+            .message("While calling the Chat Completion endpoint, an error occurred. If you are receiving a timeout error, you may adjust the timeout default with the 'timeout' configuration field.\n")
             .detail(response)
             .build();
       } else {
         String[] errorDetails = getErrorDetails(response);
         error = IntegrationError.builder()
             .title("Error Title: " + errorDetails[0])
-            .message("While calling the Chat Completion endpoint, an error occurred. Please check your Deployment ID and API Version. The following message was returned from the API request:\n")
+            .message("While calling the Chat Completion endpoint, an error occurred. The following message was returned from the API request:\n")
             .detail(errorDetails[1])
             .build();
       }
@@ -422,7 +407,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
           .addExecutionTimeDiagnostic(executionTime)
           .addRequestDiagnostic(requestDiagnostic)
           .addResponseDiagnostic(diagnosticResponse)
-//          .addResponseDiagnostic(diagnosticResponse)
           .build();
 
     }
