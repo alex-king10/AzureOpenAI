@@ -376,8 +376,10 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     try {
 //      type String
       response = chatCompletionCall(apiKey, endpoint, inputMap, timeout);
-      resultMap.put("Response", getFullResponseObject(response));
-
+      Map<String, Object> responseObject = getFullResponseObject(response);
+//      resultMap.put("Response", getFullResponseObject(response));
+      resultMap.put("Response", responseObject);
+      diagnosticResponse.put("API Response", response);
     } catch (Exception e) {
       if (response.equals("")) {
         response = String.valueOf(e.getCause());
