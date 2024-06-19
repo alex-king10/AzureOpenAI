@@ -1,0 +1,27 @@
+<appian-plugin name="AzureOpenAI" key="azure-openai-csp">
+  <plugin-info>
+    <description>Azure OpenAI Connected System</description>
+    <vendor name="Appian" url="http://www.appian.com"/>
+    <version>1.0.2</version>
+    <application-version min="22.2"/>
+  </plugin-info>
+  <connected-system key="AzureOpenAICSP">
+    <version major-version="1">
+      <connected-system-template key="AzureOpenAICSP"
+                                 name="AzureOpenAICSP"
+                                 class="com.appian.azureopenai.templates.AzureOpenAICSP"/>
+      <integration-template key="AzureChatCompletionIntegrationTemplate"
+                            name="AzureChatCompletionIntegrationTemplate"
+                            class="com.appian.azureopenai.templates.AzureChatCompletionIntegrationTemplate"
+                            request-policy="read"/>
+      <integration-template key="AzureEmbeddingIntegrationTemplate"
+                            name="AzureEmbeddingIntegrationTemplate"
+                            class="com.appian.azureopenai.templates.AzureEmbeddingIntegrationTemplate"
+                            request-policy="read"/>
+      <integration-template key="AzureCompletionIntegrationTemplate"
+                            name="AzureCompletionIntegrationTemplate"
+                            class="com.appian.azureopenai.templates.AzureCompletionIntegrationTemplate"
+                            request-policy="read"/>
+    </version>
+  </connected-system>
+</appian-plugin>

@@ -1,4 +1,4 @@
-version '1.0.1'
+version '1.0.2'
 
 apply plugin: 'java'
 
@@ -10,15 +10,12 @@ dependencies {
   compileOnly 'com.appian:connected-systems-core:1.2.0'
   implementation 'com.appian:connected-systems-client:1.1.0'
   testImplementation 'com.appian:connected-systems-core:1.2.0'
-  implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.11'
-//  needs updating
-  implementation 'org.json:json:20230618'
+  implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.14'
+  implementation 'org.json:json:20240303'
   testImplementation 'junit:junit:4.13.2'
   testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.9.2'
   implementation 'com.google.guava:guava:32.0.0-jre'
   implementation 'com.google.code.gson:gson:2.10.1'
-
-
 
 }
 

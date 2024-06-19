@@ -2,8 +2,8 @@
   <plugin-info>
     <description>Azure OpenAI Connected System</description>
     <vendor name="Appian" url="http://www.appian.com"/>
-    <version>1.0.1</version>
-    <application-version min="7.6.0.4"/>
+    <version>1.0.2</version>
+    <application-version min="22.2"/>
   </plugin-info>
   <connected-system key="AzureOpenAICSP">
     <version major-version="1">
