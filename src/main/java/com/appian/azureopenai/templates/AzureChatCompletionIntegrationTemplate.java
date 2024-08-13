@@ -160,9 +160,6 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
           Choice.builder().name("required").value("required").build(),
           Choice.builder().name("auto").value("auto").build()));
 
-
-
-
   @Override
   protected SimpleConfiguration getConfiguration(
     SimpleConfiguration integrationConfiguration,
@@ -176,6 +173,40 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
         textProperty("content").label("Content").build()
     ).build();
     localTypeProperty(messageInputType, "neededToChat");
+
+//    create custom type for nested function properties
+    LocalTypeDescriptor properties = localType("properties").properties(
+            textProperty("name").label("Name").build(),
+            textProperty("type").label("Type").build(),
+            textProperty("description").label("Description").build()
+    ).build();
+    localTypeProperty(properties, "properties");
+
+//    create custom type for function properties
+    LocalTypeDescriptor functionProperties = localType("functionProperties").properties(
+            textProperty("name").label("Name").build(),
+            textProperty("type").label("Type").build(),
+            textProperty("description").label("Description").build(),
+            listTypeProperty("properties").label("Properties").itemType(TypeReference.from(properties)).build(),
+            listTypeProperty("required").label("Required").itemType(SystemType.STRING).build()
+    ).build();
+    localTypeProperty(functionProperties, "functionProperties");
+
+
+//    create custom type for function parameters
+    LocalTypeDescriptor functionParameters = localType("functionParameters").properties(
+            listTypeProperty("properties").label("Properties").itemType(TypeReference.from(functionProperties)).build(),
+            listTypeProperty("required").label("Required").itemType(SystemType.STRING).build()
+    ).build();
+    localTypeProperty(functionParameters, "parameters");
+
+//    create custom type for function calling prompt
+    LocalTypeDescriptor functionInputType = localType("functionCallInput").properties(
+            textProperty("name").label("Name").build(),
+            textProperty("description").label("Description").build(),
+            localTypeProperty(functionParameters, "parameters").build()
+    ).build();
+    localTypeProperty(functionInputType, "functionInputType");
 
 //    create dynamic fields
     Boolean devSettingsState = integrationConfiguration.getValue(DEV_SETTINGS);
@@ -204,6 +235,43 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
                   "{{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
                   "    {\"role\": \"user\", \"content\": \"What does Appian's platform do?\"}}")
               .build(),
+          listTypeProperty(FUNCTION).label("Function Call Input")
+                  .itemType(TypeReference.from(functionInputType))
+                  .isExpressionable(true)
+                  .isRequired(false)
+                  .description("The function(s) to generate parameters for.\nFor more information, go to https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling")
+                  .instructionText("The function(s) to generate parameters for, in the following format:\n" +
+                          "{\n" +
+                          "  {\n" +
+                          "    name: \"get_weather\",\n" +
+                          "    description: \"Determines what the weather is like at the specified city\",\n" +
+                          "    parameters: {\n" +
+                          "      type: \"object\",\n" +
+                          "      properties: {\n" +
+                          "            {\n" +
+                          "              name: \"city\",\n" +
+                          "              type: \"string\",\n" +
+                          "              description: \"The city name, e.g. San Francisco\"\n" +
+                          "            },\n" +
+                          "            {\n" +
+                          "              name: \"coast\",\n" +
+                          "              type: \"string\",\n" +
+                          "              description: \"Which coast the city is on, east or west\"\n" +
+                          "            }\n" +
+                          "      },\n" +
+                          "      required: {\"city\", \"coast\"}\n" +
+                          "    }\n" +
+                          "  }\n" +
+                          "}")
+                  .build(),
+          dropdownProperty(TOOL_CHOICE, tool_choices).label("Function Call Tool Choice")
+                  .description("Tool choice for function calling.\n" +
+                          "required: Model will always select a function(s) to call\n" +
+                          "auto: Model will select which function(s) to call, or choose not to call any function\n" +
+                          "none: Model will not use function calling")
+                  .instructionText("Tool choice for function calling")
+                  .isRequired(false)
+                  .build(),
           booleanProperty(DEV_SETTINGS).label("Developer Settings")
               .displayMode(BooleanDisplayMode.CHECKBOX)
               .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
@@ -237,7 +305,43 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
                 "{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
                 "    {\"role\": \"user\", \"content\": \"What does Appian's platform do?\"}")
             .build(),
-
+        listTypeProperty(FUNCTION).label("Function Call Input")
+                .itemType(TypeReference.from(functionInputType))
+                .isExpressionable(true)
+                .isRequired(false)
+                .description("The function(s) to generate parameters for.\nFor more information, go to https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling")
+                .instructionText("The function(s) to generate parameters for, in the following format:\n" +
+                        "{\n" +
+                        "  {\n" +
+                        "    name: \"get_weather\",\n" +
+                        "    description: \"Determines what the weather is like at the specified city\",\n" +
+                        "    parameters: {\n" +
+                        "      type: \"object\",\n" +
+                        "      properties: {\n" +
+                        "            {\n" +
+                        "              name: \"city\",\n" +
+                        "              type: \"string\",\n" +
+                        "              description: \"The city name, e.g. San Francisco\"\n" +
+                        "            },\n" +
+                        "            {\n" +
+                        "              name: \"coast\",\n" +
+                        "              type: \"string\",\n" +
+                        "              description: \"Which coast the city is on, east or west\"\n" +
+                        "            }\n" +
+                        "      },\n" +
+                        "      required: {\"city\", \"coast\"}\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}")
+                .build(),
+        dropdownProperty(TOOL_CHOICE, tool_choices).label("Function Call Tool Choice")
+                .description("Tool choice for function calling.\n" +
+                        "required: Model will always select a function(s) to call\n" +
+                        "auto: Model will select which function(s) to call, or choose not to call any function\n" +
+                        "none: Model will not use function calling")
+                .instructionText("Tool choice for function calling")
+                .isRequired(false)
+                .build(),
         booleanProperty(DEV_SETTINGS).label("Developer Settings")
             .displayMode(BooleanDisplayMode.CHECKBOX)
             .description("Check this box if you would like to set more advanced configurations for your API call. The placeholder values in each field below are the default values. If no value is given, this default value will be used.")
