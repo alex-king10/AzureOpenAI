@@ -99,7 +99,11 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
       for (int i = 0; i < choices.length(); i++) {
         JSONObject choice = choices.getJSONObject(i);
         JSONObject message = choice.getJSONObject("message");
-        contentArr.add(message.getString("content"));
+
+        Object contentPlaceholder = message.get("content");
+        if (contentPlaceholder != null && contentPlaceholder != JSONObject.NULL) {
+          contentArr.add(message.getString("content"));
+        }
       }
     }
     return contentArr;
