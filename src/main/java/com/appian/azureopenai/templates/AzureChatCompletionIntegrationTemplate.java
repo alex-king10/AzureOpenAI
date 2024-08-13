@@ -149,7 +149,16 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
   public static final String MESSAGE = "messages";
 
+  public static final String FUNCTION = "functionCall";
+
+  public static final String TOOL_CHOICE = "toolChoice";
+
   public static final String DEV_SETTINGS = "devSettings";
+
+  public static final ArrayList<Choice> tool_choices = new ArrayList<>(Arrays.asList(
+          Choice.builder().name("none").value("none").build(),
+          Choice.builder().name("required").value("required").build(),
+          Choice.builder().name("auto").value("auto").build()));
 
 
 
