@@ -419,6 +419,7 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
     String deploymentID = integrationConfiguration.getValue(DEPLOYMENT_ID);
     String APIVersion = integrationConfiguration.getValue(API_VERSION);
     String endpoint = getFullEndpoint(resourceName, deploymentID, APIVersion);
+    String tool_choice = integrationConfiguration.getValue(TOOL_CHOICE);
 
 
     Map<String, Object> inputMap = new HashMap<>();
@@ -444,6 +445,85 @@ public class AzureChatCompletionIntegrationTemplate extends SimpleIntegrationTem
 
 
     inputMap.put("messages", messageList);
+
+//      function calling
+    List<Object> functionWrapper = integrationConfiguration.getValue(FUNCTION);
+    if (functionWrapper != null) {
+      ArrayList<Map<String, Object>> functionList = new ArrayList<>();
+      for (int i = 0; i < functionWrapper.size(); i++){
+        Map<String, Object> functionData = ((Map<String, Object>)((PropertyState)functionWrapper.get(i)).getValue());
+
+        String functionName = (String)((PropertyState)functionData.get("name")).getValue();
+        String functionDescription = (String)((PropertyState)functionData.get("description")).getValue();
+
+        Map<String, Object> parameterWrapper = (Map<String, Object>)((PropertyState)functionData.get("parameters")).getValue();
+        List<Object> currentProperties = (List<Object>)((PropertyState)parameterWrapper.get("properties")).getValue();
+
+        // Creating the data structures to pass into the Azure OpenAI API
+        Map<String, Object> functionMap = new HashMap<>();
+        functionMap.put("type", "function");
+
+        Map<String, Object> function = new HashMap<>();
+        function.put("name", functionName);
+        function.put("description", functionDescription);
+
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("type", "object");
+
+        Map<String, Object> parameterProperties = new HashMap<>();
+
+        for (Object argument: currentProperties){
+          Map<String, Object> argumentValue = ((Map<String, Object>)((PropertyState)argument).getValue());
+
+          Map<String, Object> argumentBuilder = new HashMap<>();
+          argumentBuilder.put("type", (String)((PropertyState)argumentValue.get("type")).getValue());
+          argumentBuilder.put("description", (String)((PropertyState)argumentValue.get("description")).getValue());
+
+          // To handle the case of parameters that are of type object
+          if (argumentValue.containsKey("properties") && argumentValue.get("properties") != null) {
+            List<Object> objectProperties = (List<Object>)((PropertyState)argumentValue.get("properties")).getValue();
+            Map<String, Object> propertiesMap = new HashMap<>();
+            for (Object prop: objectProperties) {
+              Map<String, Object> objectArgumentValues = ((Map<String, Object>)((PropertyState)prop).getValue());
+              Map<String, Object> valueHolder = new HashMap<>();
+              valueHolder.put("type", (String)((PropertyState)objectArgumentValues.get("type")).getValue());
+              valueHolder.put("description", (String)((PropertyState)objectArgumentValues.get("description")).getValue());
+              propertiesMap.put((String)((PropertyState)objectArgumentValues.get("name")).getValue(), valueHolder);
+            }
+            argumentBuilder.put("properties", propertiesMap);
+            if (argumentValue.containsKey("required") && argumentValue.get("required") != null) {
+              List<Object> required = (List<Object>)((PropertyState)argumentValue.get("required")).getValue();
+              List<String> requiredExtracted = new ArrayList<>();
+              for (Object requirement: required) {
+                requiredExtracted.add((String)((PropertyState)requirement).getValue());
+              }
+              argumentBuilder.put("required", requiredExtracted.toArray());
+            }
+          }
+
+          parameterProperties.put((String)((PropertyState)argumentValue.get("name")).getValue(), argumentBuilder);
+        }
+
+        // Define the parameters to put in the function
+        parameters.put("properties", parameterProperties);
+
+        if (parameterWrapper.containsKey("required") && parameterWrapper.get("required") != null) {
+          List<Object> required = (List<Object>)((PropertyState)parameterWrapper.get("required")).getValue();
+          List<String> requiredExtracted = new ArrayList<>();
+          for (Object requirement: required) {
+            requiredExtracted.add((String)((PropertyState)requirement).getValue());
+          }
+          parameters.put("required", requiredExtracted.toArray());
+        }
+
+        function.put("parameters", parameters);
+        functionMap.put("function", function);
+        functionList.add(functionMap);
+      }
+
+      inputMap.put("tools", functionList);
+      if (tool_choice != null) inputMap.put("tool_choice", tool_choice);
+    }
 
 //      temperature
     Double temperature =  integrationConfiguration.getValue(TEMPERATURE);
